@@ -45,6 +45,8 @@ jobs:
         run: python scripts/run_backtest.py
 
       - name: Build static HTML dashboard
+        env:
+          DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD }}
         run: python scripts/build_dashboard_html.py
 
       - name: Commit backtest results

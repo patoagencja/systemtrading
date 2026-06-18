@@ -17,6 +17,9 @@ from app.config import INITIAL_CAPITAL_PLN
 
 DOCS_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, "..", "..", "docs"))
 
+# Password to access the dashboard. Set DASHBOARD_PASSWORD env var to override.
+DASHBOARD_PASSWORD = os.getenv("DASHBOARD_PASSWORD", "trading2025")
+
 
 def _fmt(x, dec=0):
     return f"{x:,.{dec}f}".replace(",", " ")
@@ -168,6 +171,8 @@ def build_html(d, k):
     if d["snapshots"]:
         period = f"{d['snapshots'][0]['snapshot_date']} → {d['snapshots'][-1]['snapshot_date']}"
 
+    pw_hash = __import__("hashlib").sha256(DASHBOARD_PASSWORD.encode()).hexdigest()
+
     return f"""<!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -175,7 +180,41 @@ def build_html(d, k):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Market Edge Paper Trader — Dashboard</title>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<script>
+(function(){{
+  var HASH = "{pw_hash}";
+  var KEY  = "mept_auth";
+  function sha256(str){{
+    var buf = new TextEncoder().encode(str);
+    return crypto.subtle.digest("SHA-256", buf).then(function(h){{
+      return Array.from(new Uint8Array(h)).map(function(b){{return b.toString(16).padStart(2,"0")}}).join("");
+    }});
+  }}
+  function unlock(){{ document.getElementById("lock").style.display="none"; document.getElementById("app").style.display=""; }}
+  function check(pw){{
+    sha256(pw).then(function(h){{
+      if(h===HASH){{ sessionStorage.setItem(KEY,"1"); unlock(); }}
+      else{{ document.getElementById("pw-err").style.display=""; document.getElementById("pw-in").value=""; document.getElementById("pw-in").focus(); }}
+    }});
+  }}
+  window._checkPw = check;
+  window.addEventListener("DOMContentLoaded", function(){{
+    if(sessionStorage.getItem(KEY)==="1"){{ unlock(); return; }}
+    document.getElementById("pw-in").addEventListener("keydown", function(e){{ if(e.key==="Enter") check(this.value); }});
+  }});
+}})();
+</script>
 <style>
+#lock{{position:fixed;inset:0;background:#0f172a;display:flex;align-items:center;justify-content:center;z-index:9999}}
+.lock-box{{background:#1e293b;border-radius:16px;padding:40px 36px;text-align:center;max-width:340px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.5)}}
+.lock-box h2{{color:#e2e8f0;margin:0 0 6px;font-size:20px}}
+.lock-box p{{color:#94a3b8;font-size:13px;margin:0 0 24px}}
+#pw-in{{width:100%;padding:11px 14px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:15px;outline:none;box-sizing:border-box}}
+#pw-in:focus{{border-color:#3b82f6}}
+.lock-btn{{margin-top:12px;width:100%;padding:11px;border:none;border-radius:8px;background:#3b82f6;color:#fff;font-size:15px;font-weight:600;cursor:pointer}}
+.lock-btn:hover{{background:#2563eb}}
+#pw-err{{display:none;margin-top:10px;color:#f87171;font-size:13px}}
+#app{{display:none}}
   :root {{ --bg:#0f172a; --card:#1e293b; --txt:#e2e8f0; --mut:#94a3b8; }}
   * {{ box-sizing:border-box; }}
   body {{ margin:0; font-family:system-ui,Segoe UI,Roboto,sans-serif; background:#f1f5f9; color:#0f172a; }}
@@ -199,6 +238,16 @@ def build_html(d, k):
 </style>
 </head>
 <body>
+<div id="lock">
+  <div class="lock-box">
+    <h2>📈 Paper Trader</h2>
+    <p>Wpisz haslo, zeby zobaczyc dashboard</p>
+    <input id="pw-in" type="password" placeholder="Haslo..." autofocus>
+    <button class="lock-btn" onclick="_checkPw(document.getElementById('pw-in').value)">Wejdz</button>
+    <div id="pw-err">Nieprawidlowe haslo. Sprobuj ponownie.</div>
+  </div>
+</div>
+<div id="app">
 <header>
   <h1>📈 Market Edge Paper Trader</h1>
   <p>Symulacja paper trading (wirtualny kapitał, brak prawdziwych transakcji) · Okres: {period or '—'} · Aktualizacja: {updated}</p>
@@ -244,6 +293,7 @@ def build_html(d, k):
     Wynik z krótkiego okresu niczego nie dowodzi — wiarygodność daje dopiero 100–200+ transakcji.
   </div>
 </div>
+</div><!-- /app -->
 </body>
 </html>"""
 
