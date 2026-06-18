@@ -44,10 +44,13 @@ jobs:
       - name: Run backtest
         run: python scripts/run_backtest.py
 
+      - name: Build static HTML dashboard
+        run: python scripts/build_dashboard_html.py
+
       - name: Commit backtest results
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/database.sqlite
+          git add data/database.sqlite ../docs
           git commit -m "Backtest: update results [skip ci]" || echo "No changes to commit"
           git push
