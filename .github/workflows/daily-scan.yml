@@ -54,7 +54,7 @@ jobs:
 
       - name: Build static HTML dashboard
         env:
-          DASHBOARD_PASSWORD: ${{ secrets.DASHBOARD_PASSWORD || 'trading2025' }}
+          DASHBOARD_PASSWORD: "trading2025"
         run: python scripts/build_dashboard_html.py
 
       - name: Commit updated database

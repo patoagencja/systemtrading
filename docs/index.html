@@ -25,7 +25,7 @@ function _sha256(s){
   return r.map(function(t){return("00000000"+t.toString(16)).slice(-8)}).join("")
 }
 (function(){
-  var HASH="f4f2dd9898cb9fdaf7a545191489c3c54b0c878f61783be6486a48c151dd06a2",KEY="mept_auth";
+  var HASH="6af0170e0d6483565abfba4d0cc3388e90f3bed4ba211081494ef11c6ce08712",KEY="mept_auth";
   function unlock(){
     document.getElementById("lock").style.display="none";
     document.getElementById("app").style.display="block";
