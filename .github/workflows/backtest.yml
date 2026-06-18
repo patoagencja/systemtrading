@@ -6,6 +6,9 @@ name: Run 12-Month Backtest
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - ".github/trigger-backtest"
 
 permissions:
   contents: write
