@@ -51,6 +51,7 @@ def init_db():
             volume_ratio REAL,
             reason TEXT,
             acted INTEGER DEFAULT 0,
+            run_mode TEXT DEFAULT 'backtest',
             created_at TEXT DEFAULT (datetime('now'))
         );
 
@@ -75,12 +76,14 @@ def init_db():
             pnl_pct REAL DEFAULT 0,
             r_multiple REAL DEFAULT 0,
             holding_days INTEGER DEFAULT 0,
-            max_holding_days INTEGER DEFAULT 10
+            max_holding_days INTEGER DEFAULT 10,
+            run_mode TEXT DEFAULT 'backtest'
         );
 
         CREATE TABLE IF NOT EXISTS portfolio_snapshots (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            snapshot_date TEXT NOT NULL UNIQUE,
+            snapshot_date TEXT NOT NULL,
+            run_mode TEXT NOT NULL DEFAULT 'backtest',
             total_value_pln REAL NOT NULL,
             cash_pln REAL NOT NULL,
             invested_pln REAL NOT NULL,
@@ -91,12 +94,14 @@ def init_db():
             max_drawdown_pct REAL DEFAULT 0,
             win_trades INTEGER DEFAULT 0,
             loss_trades INTEGER DEFAULT 0,
-            total_closed_trades INTEGER DEFAULT 0
+            total_closed_trades INTEGER DEFAULT 0,
+            UNIQUE(snapshot_date, run_mode)
         );
 
         CREATE TABLE IF NOT EXISTS strategy_stats (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            strategy TEXT NOT NULL UNIQUE,
+            strategy TEXT NOT NULL,
+            run_mode TEXT NOT NULL DEFAULT 'backtest',
             total_trades INTEGER DEFAULT 0,
             win_trades INTEGER DEFAULT 0,
             loss_trades INTEGER DEFAULT 0,
@@ -107,16 +112,38 @@ def init_db():
             win_rate REAL DEFAULT 0,
             avg_r_multiple REAL DEFAULT 0,
             avg_holding_days REAL DEFAULT 0,
-            last_updated TEXT DEFAULT (datetime('now'))
+            last_updated TEXT DEFAULT (datetime('now')),
+            UNIQUE(strategy, run_mode)
         );
         """)
+        # Migrate existing tables (add run_mode if missing)
+        for table in ("trades", "signals"):
+            try:
+                cur.execute(f"ALTER TABLE {table} ADD COLUMN run_mode TEXT DEFAULT 'backtest'")
+            except Exception:
+                pass
+        try:
+            cur.execute("ALTER TABLE portfolio_snapshots ADD COLUMN run_mode TEXT DEFAULT 'backtest'")
+            cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_snap_date_mode ON portfolio_snapshots(snapshot_date, run_mode)")
+        except Exception:
+            pass
+        try:
+            cur.execute("ALTER TABLE strategy_stats ADD COLUMN run_mode TEXT DEFAULT 'backtest'")
+        except Exception:
+            pass
     print("Database initialized.")
 
 
-def reset_trading_data():
-    """Delete all trades, signals, snapshots and stats (keeps watchlist)."""
+def reset_trading_data(run_mode: str = None):
+    """Delete trades/signals/snapshots/stats. If run_mode given, only that mode."""
     with db_cursor() as cur:
-        cur.execute("DELETE FROM trades")
-        cur.execute("DELETE FROM signals")
-        cur.execute("DELETE FROM portfolio_snapshots")
-        cur.execute("DELETE FROM strategy_stats")
+        if run_mode:
+            cur.execute("DELETE FROM trades WHERE run_mode=?", (run_mode,))
+            cur.execute("DELETE FROM signals WHERE run_mode=?", (run_mode,))
+            cur.execute("DELETE FROM portfolio_snapshots WHERE run_mode=?", (run_mode,))
+            cur.execute("DELETE FROM strategy_stats WHERE run_mode=?", (run_mode,))
+        else:
+            cur.execute("DELETE FROM trades")
+            cur.execute("DELETE FROM signals")
+            cur.execute("DELETE FROM portfolio_snapshots")
+            cur.execute("DELETE FROM strategy_stats")

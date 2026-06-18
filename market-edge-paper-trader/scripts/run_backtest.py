@@ -35,12 +35,12 @@ def run_backtest():
     print(f"  Initial capital: {INITIAL_CAPITAL_PLN:,.0f} PLN")
     print(f"{'='*60}")
 
-    # Clear previous backtest data
+    # Clear previous backtest data only (keep live trades)
     with db_cursor() as cur:
-        cur.execute("DELETE FROM trades")
-        cur.execute("DELETE FROM signals")
-        cur.execute("DELETE FROM portfolio_snapshots")
-        cur.execute("DELETE FROM strategy_stats")
+        cur.execute("DELETE FROM trades WHERE run_mode='backtest'")
+        cur.execute("DELETE FROM signals WHERE run_mode='backtest'")
+        cur.execute("DELETE FROM portfolio_snapshots WHERE run_mode='backtest'")
+        cur.execute("DELETE FROM strategy_stats WHERE run_mode='backtest'")
 
     # Load watchlist
     conn = get_connection()
@@ -69,7 +69,7 @@ def run_backtest():
 
     spy_full = all_data.get("SPY", pd.DataFrame())
 
-    broker = PaperBroker(PLN_USD_RATE)
+    broker = PaperBroker(PLN_USD_RATE, run_mode="backtest")
     trading_days = trading_days_between(start_date, end_date)
 
     open_trades: list[dict] = []  # in-memory for speed
@@ -258,16 +258,16 @@ def run_backtest():
         with db_cursor() as cur:
             cur.execute("""
                 INSERT OR REPLACE INTO portfolio_snapshots
-                (snapshot_date, total_value_pln, cash_pln, invested_pln,
+                (snapshot_date, run_mode, total_value_pln, cash_pln, invested_pln,
                  open_positions, daily_pnl_pln, total_pnl_pln, total_return_pct,
                  max_drawdown_pct, total_closed_trades)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+                VALUES (?, 'backtest', ?, ?, ?, ?, ?, ?, ?, 0, ?)
             """, (
                 sim_date_str, round(total_value, 2), round(cash, 2),
                 round(sum(t["position_value_pln"] for t in open_trades), 2),
                 len(open_trades), round(daily_pnl, 2), round(pnl_total, 2),
                 round(pnl_total / INITIAL_CAPITAL_PLN * 100, 4),
-                len([t for t in equity_curve]),
+                len(equity_curve),
             ))
 
         if new_today or closed_today:
@@ -300,7 +300,7 @@ def _print_backtest_summary(equity_curve: list):
     conn = get_connection()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT COUNT(*), SUM(CASE WHEN pnl_pln>0 THEN 1 ELSE 0 END), SUM(pnl_pln) FROM trades WHERE status='closed'")
+        cur.execute("SELECT COUNT(*), SUM(CASE WHEN pnl_pln>0 THEN 1 ELSE 0 END), SUM(pnl_pln) FROM trades WHERE status='closed' AND run_mode='backtest'")
         row = cur.fetchone()
         total_trades = row[0] or 0
         wins = row[1] or 0

@@ -21,12 +21,12 @@ def load_watchlist() -> list[dict]:
         conn.close()
 
 
-def run_scanner(today: date = None, verbose: bool = True) -> dict:
+def run_scanner(today: date = None, verbose: bool = True, run_mode: str = "live") -> dict:
     if today is None:
         today = date.today()
 
-    portfolio = Portfolio()
-    broker = PaperBroker(PLN_USD_RATE)
+    portfolio = Portfolio(run_mode=run_mode)
+    broker = PaperBroker(PLN_USD_RATE, run_mode=run_mode)
     risk = RiskManager(portfolio.total_value_pln, PLN_USD_RATE)
 
     watchlist = load_watchlist()
@@ -130,7 +130,7 @@ def run_scanner(today: date = None, verbose: bool = True) -> dict:
 
     # Phase 4: Snapshot
     portfolio._refresh()
-    prev_value = _get_prev_snapshot_value()
+    prev_value = _get_prev_snapshot_value(run_mode)
     daily_pnl = portfolio.total_value_pln - prev_value
     portfolio.save_snapshot(today, daily_pnl)
     broker.update_strategy_stats()
@@ -226,13 +226,14 @@ def _update_open_positions(
     return closed_count
 
 
-def _get_prev_snapshot_value() -> float:
+def _get_prev_snapshot_value(run_mode: str = "live") -> float:
     from app.config import INITIAL_CAPITAL_PLN
     conn = get_connection()
     try:
         cur = conn.cursor()
         cur.execute(
-            "SELECT total_value_pln FROM portfolio_snapshots ORDER BY snapshot_date DESC LIMIT 1"
+            "SELECT total_value_pln FROM portfolio_snapshots WHERE run_mode=? ORDER BY snapshot_date DESC LIMIT 1",
+            (run_mode,)
         )
         row = cur.fetchone()
         return row[0] if row else INITIAL_CAPITAL_PLN
