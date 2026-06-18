@@ -1,0 +1,50 @@
+name: Run 12-Month Backtest
+
+# Simulates the last 12 months of trading day-by-day (no look-ahead) and commits
+# the resulting trades, equity curve and stats back to the repo so the dashboard
+# can display them. Trigger manually from the Actions tab ("Run workflow").
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: paper-trader-db
+  cancel-in-progress: false
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: market-edge-paper-trader
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Ensure database and watchlist exist
+        run: |
+          python scripts/init_db.py
+          python scripts/seed_watchlist.py
+
+      - name: Run backtest
+        run: python scripts/run_backtest.py
+
+      - name: Commit backtest results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/database.sqlite
+          git commit -m "Backtest: update results [skip ci]" || echo "No changes to commit"
+          git push

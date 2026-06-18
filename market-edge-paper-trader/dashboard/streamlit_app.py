@@ -82,6 +82,66 @@ def pct_bar(val):
 st.title("📈 Market Edge Paper Trader")
 st.caption(f"Virtual capital: {INITIAL_CAPITAL_PLN:,.0f} PLN | Simulation only — no real trades")
 
+# ─── Control panel (sidebar) ────────────────────────────────────────────────
+with st.sidebar:
+    st.header("⚙️ Sterowanie")
+    st.caption("Uruchom system bezpośrednio tutaj — wszystko działa online.")
+
+    scan_clicked = st.button("🔄 Uruchom skan (Daily Scan)", use_container_width=True)
+    backtest_clicked = st.button("📊 Uruchom backtest (12 mies.)", use_container_width=True)
+
+    st.divider()
+    with st.expander("♻️ Reset portfela"):
+        st.caption("Kasuje wszystkie transakcje i zaczyna od zera.")
+        reset_clicked = st.button("Resetuj teraz", use_container_width=True)
+
+    st.divider()
+    st.caption(
+        "ℹ️ Dane wpisane tutaj utrzymują się w trakcie sesji. "
+        "Aby zapisać je trwale na 1–2 miesiące, włącz automatycznego robota "
+        "(GitHub Actions) — instrukcja w README."
+    )
+
+    if scan_clicked:
+        ok = False
+        try:
+            with st.spinner("Skanowanie rynku... (zwykle 1–3 min)"):
+                from datetime import date as _date
+                from app.scanner import run_scanner
+                _stats = run_scanner(today=_date.today(), verbose=True)
+            ok = True
+        except Exception as e:
+            st.error(f"Błąd skanu: {e}")
+        if ok:
+            st.cache_data.clear()
+            st.success(
+                f"Skan zakończony — nowe: {_stats['new_positions']}, "
+                f"zamknięte: {_stats['closed_positions']}, "
+                f"sygnały: {_stats['signals_found']}"
+            )
+            st.rerun()
+
+    if backtest_clicked:
+        ok = False
+        try:
+            with st.spinner("Backtest 12 miesięcy... (pobiera dane ~86 tickerów, 3–8 min)"):
+                from scripts.run_backtest import run_backtest
+                run_backtest()
+            ok = True
+        except Exception as e:
+            st.error(f"Błąd backtestu: {e}")
+        if ok:
+            st.cache_data.clear()
+            st.success("Backtest zakończony! Wyniki poniżej.")
+            st.rerun()
+
+    if reset_clicked:
+        from app.database import reset_trading_data
+        reset_trading_data()
+        st.cache_data.clear()
+        st.success("Portfel zresetowany do stanu początkowego.")
+        st.rerun()
+
 snapshots = load_snapshots()
 open_trades = load_open_trades()
 closed_trades = load_closed_trades()

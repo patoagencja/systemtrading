@@ -7,7 +7,59 @@ Skanuje rynek, generuje sygnały z 4 strategii technicznych, otwiera wirtualne p
 
 ---
 
-## Szybki start (krok po kroku)
+## 🌐 URUCHOMIENIE ONLINE (bez instalowania niczego) — ZALECANE dla nietechnicznych
+
+Możesz uruchomić cały system **w chmurze, za darmo, klikając tylko w przeglądarce**.
+Nie musisz instalować Pythona ani niczego pobierać.
+
+### Część A — Dashboard online (Streamlit Cloud)
+
+1. Wejdź na **[share.streamlit.io](https://share.streamlit.io)**
+2. Kliknij **Sign in** i zaloguj się swoim kontem **GitHub** (tym, które ma dostęp do `patoagencja/systemtrading`)
+3. Kliknij **Create app** → **Deploy a public app from GitHub** (lub „from existing repo")
+4. Wypełnij pola:
+   - **Repository:** `patoagencja/systemtrading`
+   - **Branch:** `claude/laughing-lovelace-gtvcia`
+   - **Main file path:** `market-edge-paper-trader/dashboard/streamlit_app.py`
+5. Kliknij **Deploy**
+6. Po 1–2 minutach dostaniesz **adres URL** (np. `https://twojanazwa.streamlit.app`) — to jest Twój dashboard. Zapisz go w zakładkach.
+
+### Część B — Uruchamianie systemu (przyciski w dashboardzie)
+
+W dashboardzie po lewej stronie (panel boczny) masz przyciski:
+
+- **🔄 Uruchom skan** — pobiera najnowsze dane, otwiera/zamyka pozycje (1–3 min)
+- **📊 Uruchom backtest** — symuluje ostatnie 12 miesięcy i od razu pokazuje wyniki (3–8 min)
+- **♻️ Reset portfela** — czyści wszystko i zaczyna od zera
+
+> **Na start kliknij „Uruchom backtest"** — po kilku minutach zobaczysz pełny dashboard
+> z prawdziwymi danymi: krzywą kapitału, transakcjami i statystykami.
+
+⚠️ **Ważne:** dane wpisane przyciskami w dashboardzie utrzymują się tylko w trakcie sesji.
+Jeśli aplikacja „uśnie" (po dłuższej nieaktywności), dane wrócą do ostatniego zapisanego stanu.
+Aby system **codziennie sam handlował i zapisywał wyniki trwale** przez 1–2 miesiące — włącz robota (Część C).
+
+### Część C — Automatyczny robot (GitHub Actions) — dla trwałego testu 1–2 miesiące
+
+System ma wbudowanego „robota", który codziennie sam skanuje rynek i zapisuje wyniki:
+
+1. Wejdź na **github.com/patoagencja/systemtrading**
+2. Kliknij zakładkę **Actions** (u góry)
+3. Jeśli zobaczysz przycisk „I understand my workflows, enable them" — kliknij go
+4. Z lewej listy wybierz **Run 12-Month Backtest** → kliknij **Run workflow** → wybierz gałąź `claude/laughing-lovelace-gtvcia` → **Run workflow**.
+   Po kilku minutach wyniki zapiszą się i pojawią w dashboardzie (kliknij „🔄 Refresh data").
+5. Aby uruchomić pojedynczy skan ręcznie: wybierz **Daily Paper Trading Scan** → **Run workflow**.
+
+**Automatyczne codzienne skany** (bez Twojego udziału) działają tylko, gdy te pliki są
+na **głównej gałęzi (main)** repozytorium. Jeśli chcesz włączyć pełną automatykę 24/7,
+poproś o połączenie tej gałęzi z `main` (mogę przygotować to na życzenie).
+
+> **Uwaga:** w ustawieniach repozytorium musi być włączony zapis dla Actions:
+> *Settings → Actions → General → Workflow permissions → „Read and write permissions"*.
+
+---
+
+## 💻 Szybki start LOKALNY (na własnym komputerze, dla zaawansowanych)
 
 ### 1. Zainstaluj Pythona
 

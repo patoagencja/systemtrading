@@ -1,0 +1,61 @@
+name: Daily Paper Trading Scan
+
+# Runs the live paper trading scan and commits the updated database back to the repo.
+# - Scheduled run works automatically ONLY on the repository's default branch.
+# - Manual run ("Run workflow" button) works on ANY branch.
+
+on:
+  schedule:
+    # 23:00 UTC on weekdays (after US market close). Cron is always in UTC.
+    - cron: "0 23 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      reset:
+        description: "Reset portfolio before scanning (start fresh)?"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: paper-trader-db
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: market-edge-paper-trader
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Ensure database and watchlist exist
+        run: |
+          python scripts/init_db.py
+          python scripts/seed_watchlist.py
+
+      - name: Optional reset
+        if: ${{ github.event.inputs.reset == 'true' }}
+        run: python scripts/reset_portfolio.py --force
+
+      - name: Run paper trading scan
+        run: python scripts/run_scan.py
+
+      - name: Commit updated database
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/database.sqlite
+          git commit -m "Daily scan: update portfolio data [skip ci]" || echo "No changes to commit"
+          git push

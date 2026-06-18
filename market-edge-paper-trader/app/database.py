@@ -6,7 +6,6 @@ from app.config import DB_PATH
 def get_connection():
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
     return conn
 
@@ -112,3 +111,12 @@ def init_db():
         );
         """)
     print("Database initialized.")
+
+
+def reset_trading_data():
+    """Delete all trades, signals, snapshots and stats (keeps watchlist)."""
+    with db_cursor() as cur:
+        cur.execute("DELETE FROM trades")
+        cur.execute("DELETE FROM signals")
+        cur.execute("DELETE FROM portfolio_snapshots")
+        cur.execute("DELETE FROM strategy_stats")
