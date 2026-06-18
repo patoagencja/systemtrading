@@ -2,7 +2,23 @@ from datetime import date, datetime
 import pandas as pd
 from app.database import db_cursor, get_connection
 from app.strategies import Signal
-from app.config import PLN_USD_RATE
+from app.config import PLN_USD_RATE, COMMISSION_PCT, SLIPPAGE_PCT
+
+
+def _apply_costs(price: float, side: str) -> tuple[float, float]:
+    """Return (adjusted_price, cost_usd_per_share) after slippage + commission.
+
+    side='buy'  → price moves UP   (you pay more than close)
+    side='sell' → price moves DOWN  (you receive less than close)
+    """
+    slip = price * SLIPPAGE_PCT
+    comm = price * COMMISSION_PCT
+    total_cost_per_share = slip + comm          # USD per share per side
+    if side == "buy":
+        effective_price = price + slip          # worse fill on entry
+    else:
+        effective_price = price - slip          # worse fill on exit
+    return effective_price, total_cost_per_share
 
 
 class PaperBroker:
@@ -12,19 +28,25 @@ class PaperBroker:
 
     def open_trade(self, signal: Signal, shares: float, position_value_pln: float,
                    risk_pln: float, trade_date: date) -> int:
+        # Apply slippage + commission on entry (buy side)
+        eff_entry, cost_per_share = _apply_costs(signal.entry_price, "buy")
+        entry_cost_pln = cost_per_share * shares * self.rate  # commission only (slippage in price)
+        # The actual cash outflow is slightly more than the nominal position value
+        actual_position_pln = eff_entry * shares * self.rate
         with db_cursor() as cur:
             cur.execute("""
                 INSERT INTO trades
                 (ticker, strategy, status, entry_date, entry_price, stop_loss, take_profit,
                  shares, position_value_pln, risk_pln, score, entry_reason, max_holding_days,
                  pnl_pln, pnl_pct, r_multiple, holding_days, run_mode)
-                VALUES (?, ?, 'open', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0, ?)
+                VALUES (?, ?, 'open', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?)
             """, (
                 signal.ticker, signal.strategy, str(trade_date),
-                round(signal.entry_price, 4), round(signal.stop_loss, 4),
+                round(eff_entry, 4), round(signal.stop_loss, 4),
                 round(signal.take_profit, 4), round(shares, 4),
-                round(position_value_pln, 2), round(risk_pln, 2),
+                round(actual_position_pln, 2), round(risk_pln, 2),
                 round(signal.score, 1), signal.reason, signal.max_holding_days,
+                round(-entry_cost_pln, 2),  # initial pnl already negative (commission)
                 self.run_mode,
             ))
             return cur.lastrowid
@@ -79,9 +101,14 @@ class PaperBroker:
             if not row:
                 return
             entry_price, shares, risk_pln, entry_date_str = row
-            pnl_usd = (exit_price_usd - entry_price) * shares
-            pnl_pln = pnl_usd * self.rate
-            pnl_pct = (exit_price_usd - entry_price) / entry_price * 100
+
+            # Apply slippage + commission on exit (sell side)
+            eff_exit, cost_per_share = _apply_costs(exit_price_usd, "sell")
+            exit_cost_pln = cost_per_share * shares * self.rate
+
+            pnl_usd = (eff_exit - entry_price) * shares
+            pnl_pln = pnl_usd * self.rate - exit_cost_pln  # subtract exit commission
+            pnl_pct = (eff_exit - entry_price) / entry_price * 100
             r_multiple = pnl_pln / risk_pln if risk_pln > 0 else 0
 
             entry_dt = date.fromisoformat(entry_date_str)
@@ -93,7 +120,7 @@ class PaperBroker:
                   pnl_pln=?, pnl_pct=?, r_multiple=?, holding_days=?
                 WHERE id=?
             """, (
-                str(exit_date), round(exit_price_usd, 4), reason,
+                str(exit_date), round(eff_exit, 4), reason,
                 round(pnl_pln, 2), round(pnl_pct, 4), round(r_multiple, 3),
                 holding_days, trade_id,
             ))

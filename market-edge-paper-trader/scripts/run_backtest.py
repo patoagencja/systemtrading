@@ -14,7 +14,7 @@ from dateutil.relativedelta import relativedelta
 
 from app.config import (
     INITIAL_CAPITAL_PLN, PLN_USD_RATE, MIN_SCORE_TO_OPEN,
-    MIN_HISTORY_BARS, STRATEGY_MAX_HOLDING,
+    MIN_HISTORY_BARS, STRATEGY_MAX_HOLDING, COMMISSION_PCT, SLIPPAGE_PCT,
 )
 from app.database import db_cursor, get_connection
 from app.data_provider import fetch_ohlcv_range, fetch_ohlcv
@@ -146,9 +146,14 @@ def run_backtest():
                 exit_reason = "technical_exit_below_sma50"
 
             if exit_price is not None:
-                pnl_usd = (exit_price - entry_price) * shares
-                pnl_pln = pnl_usd * PLN_USD_RATE
-                pnl_pct = (exit_price - entry_price) / entry_price * 100
+                # Apply sell-side slippage + commission
+                slip = exit_price * SLIPPAGE_PCT
+                comm = exit_price * COMMISSION_PCT
+                eff_exit = exit_price - slip
+                exit_cost_pln = comm * shares * PLN_USD_RATE
+                pnl_usd = (eff_exit - entry_price) * shares
+                pnl_pln = pnl_usd * PLN_USD_RATE - exit_cost_pln
+                pnl_pct = (eff_exit - entry_price) / entry_price * 100
                 risk_pln = trade["risk_pln"]
                 r_multiple = pnl_pln / risk_pln if risk_pln > 0 else 0
 
@@ -227,7 +232,9 @@ def run_backtest():
                 sig, sizing["shares"], sizing["position_value_pln"],
                 sizing["risk_pln"], sim_date,
             )
-            cash -= sizing["position_value_pln"]
+            # Apply buy-side slippage + commission to cash
+            entry_cost_pln = sizing["position_value_pln"] * (COMMISSION_PCT + SLIPPAGE_PCT)
+            cash -= sizing["position_value_pln"] + entry_cost_pln
             invested_pln += sizing["position_value_pln"]
 
             open_trades.append({
