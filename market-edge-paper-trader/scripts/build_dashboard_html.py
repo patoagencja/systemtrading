@@ -181,26 +181,39 @@ def build_html(d, k):
 <title>Market Edge Paper Trader — Dashboard</title>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 <script>
+/* Minimal sync SHA-256 — works in file://, http:// and https:// */
+function _sha256(s){{
+  function n(t,e){{return t>>>e|t<<32-e}}
+  var r=[],o=[],i=0,a=8;
+  for(var p=2;i<a;p++){{var f=!0;for(var c=2;c<=Math.sqrt(p);c++)if(p%c==0){{f=!1;break}}if(f){{i<a&&(r[i]=Math.pow(p,.5)%1*4294967296>>>0),o[i]=Math.pow(p,1/3)%1*4294967296>>>0,i++}}}}
+  var h=[],l=function(t){{return t.charCodeAt?t.split("").map(function(t){{return t.charCodeAt(0)}}):t}},u=l(s);
+  u.push(128);while(u.length%64!==56)u.push(0);
+  var m=8*(s.length);u.push(0,0,0,0);
+  for(var d=3;d>=0;d--)u.push(m>>>8*d&255);
+  for(var y=0;y<u.length;y+=64){{
+    for(var v=y,g=[],b=0;b<16;b++,v+=4)g[b]=u[v]<<24|u[v+1]<<16|u[v+2]<<8|u[v+3];
+    for(var b=16;b<64;b++){{var w=g[b-15],x=g[b-2];g[b]=((n(w,7)^n(w,18)^w>>>3)+(g[b-7]>>>0)+((n(x,17)^n(x,19)^x>>>10)>>>0)+(g[b-16]>>>0))>>>0}}
+    var S=r.slice(0);
+    for(var b=0;b<64;b++){{var E=S[7]+(n(S[4],6)^n(S[4],11)^n(S[4],25))+(S[4]&S[5]^~S[4]&S[6])+o[b]+g[b],k=S[7]=(n(S[0],2)^n(S[0],13)^n(S[0],22))+(S[0]&S[1]^S[0]&S[2]^S[1]&S[2]);S=[E+k>>>0,S[0],S[1],S[2],S[3]+E>>>0,S[4],S[5],S[6]]}}
+    for(var b=0;b<8;b++)r[b]=r[b]+S[b]>>>0
+  }}
+  return r.map(function(t){{return("00000000"+t.toString(16)).slice(-8)}}).join("")
+}}
 (function(){{
-  var HASH = "{pw_hash}";
-  var KEY  = "mept_auth";
-  function sha256(str){{
-    var buf = new TextEncoder().encode(str);
-    return crypto.subtle.digest("SHA-256", buf).then(function(h){{
-      return Array.from(new Uint8Array(h)).map(function(b){{return b.toString(16).padStart(2,"0")}}).join("");
-    }});
+  var HASH="{pw_hash}",KEY="mept_auth";
+  function unlock(){{
+    document.getElementById("lock").style.display="none";
+    document.getElementById("app").style.display="block";
+    setTimeout(function(){{window.dispatchEvent(new Event("resize"))}},100);
   }}
-  function unlock(){{ document.getElementById("lock").style.display="none"; document.getElementById("app").style.display=""; }}
   function check(pw){{
-    sha256(pw).then(function(h){{
-      if(h===HASH){{ sessionStorage.setItem(KEY,"1"); unlock(); }}
-      else{{ document.getElementById("pw-err").style.display=""; document.getElementById("pw-in").value=""; document.getElementById("pw-in").focus(); }}
-    }});
+    if(_sha256(pw)===HASH){{sessionStorage.setItem(KEY,"1");unlock();}}
+    else{{document.getElementById("pw-err").style.display="";document.getElementById("pw-in").value="";document.getElementById("pw-in").focus();}}
   }}
-  window._checkPw = check;
-  window.addEventListener("DOMContentLoaded", function(){{
-    if(sessionStorage.getItem(KEY)==="1"){{ unlock(); return; }}
-    document.getElementById("pw-in").addEventListener("keydown", function(e){{ if(e.key==="Enter") check(this.value); }});
+  window._checkPw=check;
+  window.addEventListener("DOMContentLoaded",function(){{
+    if(sessionStorage.getItem(KEY)==="1"){{unlock();return;}}
+    document.getElementById("pw-in").addEventListener("keydown",function(e){{if(e.key==="Enter")check(this.value);}});
   }});
 }})();
 </script>
