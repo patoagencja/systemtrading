@@ -1,0 +1,61 @@
+name: Intraday Position Monitor
+
+# Runs every 30 minutes during US regular session (15:00–20:30 UTC = 10:00–16:30 ET).
+# Checks open paper-trading positions for stop-loss / take-profit hits and
+# closes them at the current intraday price.  Does NOT generate new signals.
+
+on:
+  schedule:
+    - cron: "0,30 15 * * 1-5"
+    - cron: "0,30 16 * * 1-5"
+    - cron: "0,30 17 * * 1-5"
+    - cron: "0,30 18 * * 1-5"
+    - cron: "0,30 19 * * 1-5"
+    - cron: "0,30 20 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: paper-trader-db
+  cancel-in-progress: false
+
+jobs:
+  intraday-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: market-edge-paper-trader
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Ensure database exists
+        run: python scripts/init_db.py
+
+      - name: Check positions for SL/TP hits
+        run: python scripts/run_intraday_check.py
+
+      - name: Rebuild dashboard
+        env:
+          DASHBOARD_PASSWORD: "trading2025"
+        run: python scripts/build_dashboard_html.py
+
+      - name: Commit updated data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/database.sqlite ../docs
+          git diff --staged --quiet && echo "No changes" || \
+            git commit -m "Intraday check: update positions [skip ci]"
+          git push

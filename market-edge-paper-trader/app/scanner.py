@@ -45,7 +45,12 @@ def _mark_signal_acted(ticker: str, strategy: str, signal_date: str, run_mode: s
         )
 
 
-def run_scanner(today: date = None, verbose: bool = True, run_mode: str = "live") -> dict:
+def run_scanner(today: date = None, verbose: bool = True, run_mode: str = "live",
+                skip_pending_entry: bool = False) -> dict:
+    """EOD scan: close positions, optionally enter pending signals, generate new signals.
+
+    skip_pending_entry=True when morning-entry workflow handles entries separately.
+    """
     if today is None:
         today = date.today()
 
@@ -70,11 +75,15 @@ def run_scanner(today: date = None, verbose: bool = True, run_mode: str = "live"
     closed_count = _update_open_positions(portfolio, broker, today, verbose)
     portfolio._refresh()
 
-    # Phase 2: Enter pending signals from previous day at today's open
-    opened_pending = _enter_pending_signals(portfolio, broker, risk, today, run_mode, verbose)
-    portfolio._refresh()
-    risk = RiskManager(portfolio.total_value_pln, PLN_USD_RATE)
-    open_tickers = portfolio.get_open_tickers()
+    # Phase 2: Enter pending signals (only if not handled by morning-entry workflow)
+    if not skip_pending_entry:
+        opened_pending = _enter_pending_signals(portfolio, broker, risk, today, run_mode, verbose)
+        portfolio._refresh()
+        risk = RiskManager(portfolio.total_value_pln, PLN_USD_RATE)
+        open_tickers = portfolio.get_open_tickers()
+    else:
+        opened_pending = 0
+        open_tickers = portfolio.get_open_tickers()
 
     # Phase 3: Scan for new signals → save as pending (entered tomorrow)
     all_signals: list[tuple[Signal, float]] = []

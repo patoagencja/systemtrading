@@ -1,0 +1,54 @@
+name: Morning Entry — Enter Pending Signals
+
+# Runs 5 minutes after US market open (14:35 UTC = 9:35 ET).
+# Enters all pending signals at the actual market opening price using
+# 5-minute intraday bars from yfinance.
+
+on:
+  schedule:
+    - cron: "35 14 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: paper-trader-db
+  cancel-in-progress: false
+
+jobs:
+  morning-entry:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: market-edge-paper-trader
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Ensure database exists
+        run: python scripts/init_db.py
+
+      - name: Enter pending signals at market open price
+        run: python scripts/run_morning_entry.py
+
+      - name: Build static HTML dashboard
+        env:
+          DASHBOARD_PASSWORD: "trading2025"
+        run: python scripts/build_dashboard_html.py
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/database.sqlite ../docs
+          git commit -m "Morning entry: opened positions at market open [skip ci]" || echo "No changes"
+          git push

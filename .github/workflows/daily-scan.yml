@@ -1,13 +1,13 @@
-name: Daily Paper Trading Scan
+name: EOD Scan — Generate Signals
 
-# Runs the live paper trading scan and commits the updated database back to the repo.
-# - Scheduled run works automatically ONLY on the repository's default branch.
-# - Manual run ("Run workflow" button) works on ANY branch.
+# Runs after US market close to close any remaining positions and generate
+# new signals for next-day entry (which happens via morning-entry.yml).
+# Scheduled run works automatically ONLY on the repository's default branch.
 
 on:
   schedule:
-    # 23:00 UTC on weekdays (after US market close). Cron is always in UTC.
-    - cron: "0 23 * * 1-5"
+    # 20:30 UTC = 16:30 ET, 30 min after US market close
+    - cron: "30 20 * * 1-5"
   workflow_dispatch:
     inputs:
       reset:
@@ -23,7 +23,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  scan:
+  eod-scan:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -49,7 +49,7 @@ jobs:
         if: ${{ github.event.inputs.reset == 'true' }}
         run: python scripts/reset_portfolio.py --force
 
-      - name: Run paper trading scan
+      - name: Run EOD scan (close positions + generate signals)
         run: python scripts/run_scan.py
 
       - name: Build static HTML dashboard
@@ -57,10 +57,10 @@ jobs:
           DASHBOARD_PASSWORD: "trading2025"
         run: python scripts/build_dashboard_html.py
 
-      - name: Commit updated database
+      - name: Commit updated database and dashboard
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/database.sqlite ../docs
-          git commit -m "Daily scan: update portfolio data [skip ci]" || echo "No changes to commit"
+          git commit -m "EOD scan: close positions + new signals [skip ci]" || echo "No changes to commit"
           git push

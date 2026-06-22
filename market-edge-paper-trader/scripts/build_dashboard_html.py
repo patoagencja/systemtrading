@@ -434,8 +434,9 @@ def render_positions_panel(d: dict) -> str:
         pnl = t.get("pnl_pln") or 0
         pnl_pct = t.get("pnl_pct") or 0
         hold = t.get("holding_days") or 0
+        tid = t.get("id", "")
         rows.append(
-            f"<tr>"
+            f"<tr class='tr-click' onclick='showTrade({tid})'>"
             f"<td><b>{t['ticker']}</b></td>"
             f"<td class='mono'>{t['strategy'].replace('_', ' ')}</td>"
             f"<td class='mono'>{t['entry_date']}</td>"
@@ -449,7 +450,8 @@ def render_positions_panel(d: dict) -> str:
             f"</tr>"
         )
 
-    return f"""<div class="table-scroll">
+    return f"""<p class="table-hint">Kliknij wiersz, żeby zobaczyć szczegóły transakcji</p>
+<div class="table-scroll">
 <table>
 <thead><tr>
   <th>Ticker</th><th>Strategia</th><th>Wejście</th><th>Cena wej.</th>
@@ -475,8 +477,9 @@ def render_trades_panel(d: dict, limit: int = 100) -> str:
         r = t.get("r_multiple")
         exit_date = t.get("exit_date") or "—"
         exit_reason = t.get("exit_reason") or "—"
+        tid = t.get("id", "")
         rows.append(
-            f"<tr>"
+            f"<tr class='tr-click' onclick='showTrade({tid})'>"
             f"<td>{badge}</td>"
             f"<td><b>{t['ticker']}</b></td>"
             f"<td class='mono'>{t['strategy'].replace('_', ' ')}</td>"
@@ -491,7 +494,8 @@ def render_trades_panel(d: dict, limit: int = 100) -> str:
             f"</tr>"
         )
 
-    return f"""<div class="table-scroll">
+    return f"""<p class="table-hint">Kliknij wiersz, żeby zobaczyć szczegóły</p>
+<div class="table-scroll">
 <table>
 <thead><tr>
   <th>Status</th><th>Ticker</th><th>Strategia</th>
@@ -663,9 +667,52 @@ def render_analysis_panel(d: dict, m: dict) -> str:
 </div>"""
 
 
+def build_trades_js(live: dict, bt: dict) -> str:
+    """Serialise all trades to a JS constant for the modal."""
+    import json
+
+    def safe(v):
+        if v is None:
+            return ""
+        if isinstance(v, float) and v != v:
+            return 0
+        return v
+
+    trades: dict = {}
+    for t in live["open_trades"] + live["closed_trades"] + bt["open_trades"] + bt["closed_trades"]:
+        tid = t.get("id")
+        if tid is None:
+            continue
+        trades[str(tid)] = {
+            "ticker": safe(t.get("ticker")),
+            "strategy": safe(t.get("strategy")),
+            "status": safe(t.get("status")),
+            "run_mode": safe(t.get("run_mode")),
+            "entry_date": safe(t.get("entry_date")),
+            "entry_price": safe(t.get("entry_price")),
+            "stop_loss": safe(t.get("stop_loss")),
+            "take_profit": safe(t.get("take_profit")),
+            "exit_date": safe(t.get("exit_date")),
+            "exit_price": safe(t.get("exit_price")),
+            "exit_reason": safe(t.get("exit_reason")),
+            "shares": safe(t.get("shares")),
+            "position_value_pln": safe(t.get("position_value_pln")),
+            "risk_pln": safe(t.get("risk_pln")),
+            "pnl_pln": safe(t.get("pnl_pln")),
+            "pnl_pct": safe(t.get("pnl_pct")),
+            "r_multiple": safe(t.get("r_multiple")),
+            "holding_days": safe(t.get("holding_days")),
+            "score": safe(t.get("score")),
+            "entry_reason": safe(t.get("entry_reason")),
+            "max_holding_days": safe(t.get("max_holding_days")),
+        }
+    return f"var TRADES={json.dumps(trades, ensure_ascii=False)};"
+
+
 # ── full HTML assembly ────────────────────────────────────────────────────────
 
-def build_html(live: dict, live_m: dict, bt: dict, bt_m: dict, benchmark=None, updated: str = "") -> str:
+def build_html(live: dict, live_m: dict, bt: dict, bt_m: dict,
+               benchmark=None, updated: str = "") -> str:
     import hashlib
     pw_hash = hashlib.sha256(DASHBOARD_PASSWORD.encode()).hexdigest()
     if not updated:
@@ -824,6 +871,26 @@ tr:hover td{{background:var(--surface2)}}
 .p16{{padding:16px 0}}
 /* note */
 .disclaimer{{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--muted);margin-top:20px}}
+/* clickable rows */
+.tr-click{{cursor:pointer;transition:background .1s}}
+.tr-click:hover td{{background:rgba(56,139,253,.08)!important}}
+.table-hint{{font-size:11px;color:var(--muted);margin-bottom:6px}}
+/* trade modal */
+#trade-modal{{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:8000;align-items:center;justify-content:center;padding:16px}}
+#trade-modal.open{{display:flex}}
+.modal-box{{background:var(--surface);border:1px solid var(--border2);border-radius:14px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto}}
+.modal-header{{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 12px;border-bottom:1px solid var(--border)}}
+.modal-ticker{{font-size:22px;font-weight:800;letter-spacing:.02em}}
+.modal-close{{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;padding:2px 6px;border-radius:4px}}
+.modal-close:hover{{background:var(--surface2);color:var(--text)}}
+.modal-body{{padding:16px 20px 20px}}
+.modal-section{{margin-bottom:14px}}
+.modal-section-title{{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px;font-weight:700}}
+.modal-grid{{display:grid;grid-template-columns:1fr 1fr;gap:8px}}
+.modal-field{{background:var(--surface2);border-radius:8px;padding:10px 12px}}
+.modal-field-label{{font-size:10px;color:var(--muted);margin-bottom:3px}}
+.modal-field-value{{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}}
+.modal-reason{{background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--muted);line-height:1.5}}
 </style>
 </head>
 <body>
@@ -886,7 +953,66 @@ tr:hover td{{background:var(--surface2)}}
   </div>
 </div>
 
+<!-- Trade detail modal -->
+<div id="trade-modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div>
+        <div class="modal-ticker" id="m-ticker">—</div>
+        <div id="m-strategy" style="color:var(--muted);font-size:12px;margin-top:2px"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-title">Status</div>
+        <div class="modal-grid">
+          <div class="modal-field"><div class="modal-field-label">Status</div><div class="modal-field-value" id="m-status">—</div></div>
+          <div class="modal-field"><div class="modal-field-label">Tryb</div><div class="modal-field-value" id="m-mode">—</div></div>
+          <div class="modal-field"><div class="modal-field-label">Score sygnału</div><div class="modal-field-value" id="m-score">—</div></div>
+          <div class="modal-field"><div class="modal-field-label">Dni trzymania</div><div class="modal-field-value" id="m-hold">—</div></div>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">Wejście</div>
+        <div class="modal-grid">
+          <div class="modal-field"><div class="modal-field-label">Data wejścia</div><div class="modal-field-value" id="m-entry-date">—</div></div>
+          <div class="modal-field"><div class="modal-field-label">Cena wejścia</div><div class="modal-field-value" id="m-entry-price">—</div></div>
+          <div class="modal-field"><div class="modal-field-label">Stop Loss</div><div class="modal-field-value neg" id="m-sl">—</div></div>
+          <div class="modal-field"><div class="modal-field-label">Take Profit</div><div class="modal-field-value pos" id="m-tp">—</div></div>
+          <div class="modal-field"><div class="modal-field-label">Akcje</div><div class="modal-field-value" id="m-shares">—</div></div>
+          <div class="modal-field"><div class="modal-field-label">Wartość pozycji</div><div class="modal-field-value" id="m-pos-val">—</div></div>
+        </div>
+      </div>
+      <div id="m-exit-section" class="modal-section">
+        <div class="modal-section-title">Wyjście</div>
+        <div class="modal-grid">
+          <div class="modal-field"><div class="modal-field-label">Data wyjścia</div><div class="modal-field-value" id="m-exit-date">—</div></div>
+          <div class="modal-field"><div class="modal-field-label">Cena wyjścia</div><div class="modal-field-value" id="m-exit-price">—</div></div>
+          <div class="modal-field"><div class="modal-field-label">Powód wyjścia</div><div class="modal-field-value small" id="m-exit-reason">—</div></div>
+          <div class="modal-field"><div class="modal-field-label">Ryzyko</div><div class="modal-field-value" id="m-risk">—</div></div>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">Wynik</div>
+        <div class="modal-grid">
+          <div class="modal-field"><div class="modal-field-label">P&amp;L PLN</div><div class="modal-field-value" id="m-pnl">—</div></div>
+          <div class="modal-field"><div class="modal-field-label">P&amp;L %</div><div class="modal-field-value" id="m-pnl-pct">—</div></div>
+          <div class="modal-field"><div class="modal-field-label">R-multiple</div><div class="modal-field-value" id="m-r">—</div></div>
+          <div class="modal-field"><div class="modal-field-label">Max hold dni</div><div class="modal-field-value" id="m-max-hold">—</div></div>
+        </div>
+      </div>
+      <div id="m-reason-section" class="modal-section" style="display:none">
+        <div class="modal-section-title">Uzasadnienie sygnału</div>
+        <div class="modal-reason" id="m-reason"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
+{build_trades_js(live, bt)}
+
 (function(){{
   var HASH="{pw_hash}",KEY="mept_v2";
   function unlock(){{
@@ -913,10 +1039,8 @@ var MODE="live", TAB="overview";
 function setMode(m){{
   MODE=m;
   document.querySelectorAll(".mode-btn").forEach(function(b){{b.classList.toggle("active",b.dataset.mode===m)}});
-  // show/hide signals tab (only live)
   var sigBtn=document.getElementById("tab-signals-btn");
   if(sigBtn) sigBtn.style.display=(m==="live")?"":"none";
-  // if we're on signals tab but switching to backtest, go to overview
   if(m==="backtest" && TAB==="signals") setTab("overview");
   else updatePanels();
 }}
@@ -930,13 +1054,81 @@ function setTab(t){{
 function updatePanels(){{
   document.querySelectorAll(".panel").forEach(function(p){{
     var id="p-"+MODE+"-"+TAB;
-    var show=p.id===id;
-    p.classList.toggle("visible",show);
+    p.classList.toggle("visible",p.id===id);
   }});
   setTimeout(function(){{window.dispatchEvent(new Event("resize"))}},80);
 }}
 
-// init
+function _fmt(v,dec){{
+  if(v===null||v===undefined||v==="")return"—";
+  var n=parseFloat(v);
+  if(isNaN(n))return"—";
+  return n.toLocaleString("pl-PL",{{minimumFractionDigits:dec||0,maximumFractionDigits:dec||0}});
+}}
+function _sign(v,unit){{
+  if(v===null||v===undefined||v==="")return"—";
+  var n=parseFloat(v);
+  return(n>=0?"+":"")+_fmt(n,unit==="pct"?2:0)+(unit==="pct"?"%":" PLN");
+}}
+function _cls(el,v){{
+  var n=parseFloat(v);
+  el.className="modal-field-value"+(n>0?" pos":n<0?" neg":"");
+}}
+
+function showTrade(id){{
+  var t=TRADES[String(id)];
+  if(!t)return;
+  document.getElementById("m-ticker").textContent=t.ticker;
+  document.getElementById("m-strategy").textContent=t.strategy.replace(/_/g," ");
+  var stEl=document.getElementById("m-status");
+  stEl.textContent=t.status.toUpperCase();
+  stEl.className="modal-field-value"+(t.status==="open"?" pos":" muted");
+  document.getElementById("m-mode").textContent=t.run_mode;
+  document.getElementById("m-score").textContent=t.score?parseFloat(t.score).toFixed(0):"—";
+  document.getElementById("m-hold").textContent=t.holding_days?t.holding_days+"d":"—";
+  document.getElementById("m-entry-date").textContent=t.entry_date||"—";
+  document.getElementById("m-entry-price").textContent=t.entry_price?parseFloat(t.entry_price).toFixed(2)+" USD":"—";
+  document.getElementById("m-sl").textContent=t.stop_loss?parseFloat(t.stop_loss).toFixed(2)+" USD":"—";
+  document.getElementById("m-tp").textContent=t.take_profit?parseFloat(t.take_profit).toFixed(2)+" USD":"—";
+  document.getElementById("m-shares").textContent=t.shares?parseFloat(t.shares).toFixed(1):"—";
+  document.getElementById("m-pos-val").textContent=_fmt(t.position_value_pln)+" PLN";
+  document.getElementById("m-max-hold").textContent=t.max_holding_days?t.max_holding_days+"d":"—";
+  // exit section
+  var exitSec=document.getElementById("m-exit-section");
+  exitSec.style.display=t.status==="closed"?"":"none";
+  if(t.status==="closed"){{
+    document.getElementById("m-exit-date").textContent=t.exit_date||"—";
+    document.getElementById("m-exit-price").textContent=t.exit_price?parseFloat(t.exit_price).toFixed(2)+" USD":"—";
+    document.getElementById("m-exit-reason").textContent=t.exit_reason||"—";
+    document.getElementById("m-risk").textContent=_fmt(t.risk_pln)+" PLN";
+  }}
+  // P&L
+  var pnlEl=document.getElementById("m-pnl");
+  pnlEl.textContent=_sign(t.pnl_pln,"pln");
+  _cls(pnlEl,t.pnl_pln);
+  var pnlPctEl=document.getElementById("m-pnl-pct");
+  pnlPctEl.textContent=t.pnl_pct?_sign(t.pnl_pct,"pct"):"—";
+  _cls(pnlPctEl,t.pnl_pct);
+  var rEl=document.getElementById("m-r");
+  rEl.textContent=t.r_multiple?(parseFloat(t.r_multiple)>=0?"+":"")+parseFloat(t.r_multiple).toFixed(2)+"R":"—";
+  _cls(rEl,t.r_multiple);
+  // reason
+  var rSec=document.getElementById("m-reason-section");
+  if(t.entry_reason){{
+    rSec.style.display="";
+    document.getElementById("m-reason").textContent=t.entry_reason;
+  }}else{{rSec.style.display="none";}}
+  document.getElementById("trade-modal").classList.add("open");
+  document.body.style.overflow="hidden";
+}}
+
+function closeModal(){{
+  document.getElementById("trade-modal").classList.remove("open");
+  document.body.style.overflow="";
+}}
+
+document.addEventListener("keydown",function(e){{if(e.key==="Escape")closeModal();}});
+
 window.addEventListener("DOMContentLoaded",function(){{
   setMode("live");
   setTab("overview");
