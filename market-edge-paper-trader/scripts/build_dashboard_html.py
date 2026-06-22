@@ -24,7 +24,7 @@ DASHBOARD_PASSWORD = os.getenv("DASHBOARD_PASSWORD", "trading2025")
 def _fmt(x, dec=0):
     if x is None:
         return "—"
-    return f"{x:,.{dec}f}".replace(",", " ")  # thin space
+    return f"{x:,.{dec}f}".replace(",", " ")  # thin space
 
 
 def _sgn(v, unit="PLN", dec=0):
@@ -145,12 +145,12 @@ def fetch_spy_benchmark(snap_dates: list[str], initial: float) -> list[dict]:
 _DARK_LAYOUT = dict(
     paper_bgcolor="rgba(0,0,0,0)",
     plot_bgcolor="rgba(0,0,0,0)",
-    font=dict(color="#8b949e", size=11, family="system-ui,sans-serif"),
-    xaxis=dict(gridcolor="#21262d", linecolor="#30363d", zerolinecolor="#30363d"),
-    yaxis=dict(gridcolor="#21262d", linecolor="#30363d", zerolinecolor="#30363d"),
+    font=dict(color="#94a3b8", size=11, family="Inter,system-ui,sans-serif"),
+    xaxis=dict(gridcolor="#1e2d3d", linecolor="#1e2d3d", zerolinecolor="#1e2d3d"),
+    yaxis=dict(gridcolor="#1e2d3d", linecolor="#1e2d3d", zerolinecolor="#1e2d3d"),
     margin=dict(l=50, r=16, t=36, b=28),
     legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(size=11)),
-    hoverlabel=dict(bgcolor="#161b22", bordercolor="#30363d", font_color="#e6edf3"),
+    hoverlabel=dict(bgcolor="#1a2235", bordercolor="#2a3a4d", font_color="#f1f5f9"),
 )
 
 
@@ -162,7 +162,7 @@ def render_equity_chart(dates, values, benchmark=None, height=300) -> str:
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         x=dates, y=values, mode="lines", name="Portfolio",
-        line=dict(color="#388bfd", width=2),
+        line=dict(color="#3b82f6", width=2),
         hovertemplate="%{x}<br>%{y:,.0f} PLN<extra></extra>",
     ))
     if benchmark:
@@ -170,12 +170,12 @@ def render_equity_chart(dates, values, benchmark=None, height=300) -> str:
         b_vals = [b["value"] for b in benchmark]
         fig.add_trace(go.Scatter(
             x=b_dates, y=b_vals, mode="lines", name="SPY B&H",
-            line=dict(color="#2ea043", width=1.5, dash="dot"),
+            line=dict(color="#10b981", width=1.5, dash="dot"),
             hovertemplate="%{x}<br>%{y:,.0f} PLN<extra></extra>",
         ))
-    fig.add_hline(y=INITIAL_CAPITAL_PLN, line_dash="dash", line_color="#30363d", line_width=1)
+    fig.add_hline(y=INITIAL_CAPITAL_PLN, line_dash="dash", line_color="#2a3a4d", line_width=1)
     layout = dict(_DARK_LAYOUT)
-    layout.update(dict(title=dict(text="Krzywa kapitału", font=dict(size=13, color="#8b949e")),
+    layout.update(dict(title=dict(text="Krzywa kapitału", font=dict(size=13, color="#94a3b8")),
                        height=height, yaxis_title="PLN"))
     fig.update_layout(**layout)
     return _chart_html(fig)
@@ -185,12 +185,12 @@ def render_drawdown_chart(dates, dd_series, height=180) -> str:
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         x=dates, y=dd_series, mode="lines", fill="tozeroy", name="Drawdown",
-        line=dict(color="#f85149", width=1),
-        fillcolor="rgba(248,81,73,0.12)",
+        line=dict(color="#ef4444", width=1),
+        fillcolor="rgba(239,68,68,0.12)",
         hovertemplate="%{x}<br>%{y:.2f}%<extra></extra>",
     ))
     layout = dict(_DARK_LAYOUT)
-    layout.update(dict(title=dict(text="Drawdown (%)", font=dict(size=13, color="#8b949e")),
+    layout.update(dict(title=dict(text="Drawdown (%)", font=dict(size=13, color="#94a3b8")),
                        height=height, yaxis_title="%", showlegend=False))
     fig.update_layout(**layout)
     return _chart_html(fig)
@@ -201,14 +201,14 @@ def render_pnl_bar_chart(by_strategy: list[dict], height=220) -> str:
         return ""
     names = [r["strategy"].replace("_", " ") for r in by_strategy]
     pnls = [r["total_pnl"] or 0 for r in by_strategy]
-    colors = ["#2ea043" if p >= 0 else "#f85149" for p in pnls]
+    colors = ["#10b981" if p >= 0 else "#ef4444" for p in pnls]
     fig = go.Figure(go.Bar(
         x=pnls, y=names, orientation="h",
         marker_color=colors,
         hovertemplate="%{y}<br>%{x:,.0f} PLN<extra></extra>",
     ))
     layout = dict(_DARK_LAYOUT)
-    layout.update(dict(title=dict(text="P&L wg strategii", font=dict(size=13, color="#8b949e")),
+    layout.update(dict(title=dict(text="P&L wg strategii", font=dict(size=13, color="#94a3b8")),
                        height=height, xaxis_title="PLN", showlegend=False))
     fig.update_layout(**layout)
     return _chart_html(fig)
@@ -229,8 +229,8 @@ def _heat_color(pct: float) -> str:
     else:
         alpha = 0.75
     if pct >= 0:
-        return f"rgba(46,160,67,{alpha})"
-    return f"rgba(248,81,73,{alpha})"
+        return f"rgba(16,185,129,{alpha})"
+    return f"rgba(239,68,68,{alpha})"
 
 
 def render_monthly_heatmap(monthly_returns: dict) -> str:
@@ -238,7 +238,7 @@ def render_monthly_heatmap(monthly_returns: dict) -> str:
         return "<p class='muted' style='padding:16px 0'>Brak danych</p>"
 
     months_pl = ["Sty", "Lut", "Mar", "Kwi", "Maj", "Cze",
-                 "Lip", "Sie", "Wrz", "Paź", "Lis", "Gru"]
+                 "Lip", "Sie", "Wrz", "Paz", "Lis", "Gru"]
 
     years = sorted({k[:4] for k in monthly_returns})
     if not years:
@@ -259,7 +259,7 @@ def render_monthly_heatmap(monthly_returns: dict) -> str:
         cells = ""
         for v in year_vals:
             if v is None:
-                cells += "<td class='hm-empty'>—</td>"
+                cells += "<td class='hm-empty'>&#x2014;</td>"
             else:
                 sign = "+" if v >= 0 else ""
                 color = _heat_color(v)
@@ -280,11 +280,55 @@ def render_monthly_heatmap(monthly_returns: dict) -> str:
 </table></div>"""
 
 
+# ── right panel helpers ──────────────────────────────────────────────────────
+
+def render_right_panel_signals(signals: list) -> str:
+    if not signals:
+        return "<p class='panel-empty'>Brak sygnałów</p>"
+    rows = []
+    for s in signals[:8]:
+        rr = ""
+        if s.get("entry_price") and s.get("stop_loss") and s.get("take_profit"):
+            ep = s["entry_price"]
+            sl = s["stop_loss"]
+            tp = s["take_profit"]
+            risk = abs(ep - sl)
+            reward = abs(tp - ep)
+            if risk > 0:
+                rr = f"R/R {reward/risk:.1f}"
+        rows.append(
+            f"<div class='signal-row'>"
+            f"<span class='signal-ticker'>{s['ticker']}</span>"
+            f"<div style='text-align:right'>"
+            f"<div class='signal-score'>Score {s['score']:.0f}</div>"
+            f"<div class='signal-rr'>{rr}</div>"
+            f"</div></div>"
+        )
+    return "".join(rows)
+
+
+def render_right_panel_positions(trades: list) -> str:
+    if not trades:
+        return "<p class='panel-empty'>Brak pozycji</p>"
+    rows = []
+    for t in trades[:8]:
+        pnl_pct = t.get("pnl_pct") or 0
+        sign = "+" if pnl_pct >= 0 else ""
+        cls = "pos" if pnl_pct >= 0 else "neg"
+        rows.append(
+            f"<div class='pos-row'>"
+            f"<span class='pos-ticker'>{t['ticker']}</span>"
+            f"<span class='pos-pnl {cls}'>{sign}{pnl_pct:.1f}%</span>"
+            f"</div>"
+        )
+    return "".join(rows)
+
+
 # ── panel renderers ──────────────────────────────────────────────────────────
 
 def render_overview_panel(d: dict, m: dict, benchmark=None) -> str:
     snaps = d["snapshots"]
-    period = f"{snaps[0]['snapshot_date']} → {snaps[-1]['snapshot_date']}" if snaps else "—"
+    period = f"{snaps[0]['snapshot_date']} &#x2192; {snaps[-1]['snapshot_date']}" if snaps else "&#x2014;"
     latest = snaps[-1] if snaps else {}
     portfolio_val = latest.get("total_value_pln", INITIAL_CAPITAL_PLN)
     cash = latest.get("cash_pln", INITIAL_CAPITAL_PLN)
@@ -295,8 +339,8 @@ def render_overview_panel(d: dict, m: dict, benchmark=None) -> str:
     equity_chart = render_equity_chart(m["dates"], m["values"], benchmark) if m["values"] else ""
     dd_chart = render_drawdown_chart(m["dates"], m["dd_series"]) if m["dd_series"] else ""
 
-    pf_str = f"{m['profit_factor']:.2f}" if m["profit_factor"] < 900 else "∞"
-    calmar_str = f"{m['calmar']:.2f}" if m["calmar"] < 900 else "∞"
+    pf_str = f"{m['profit_factor']:.2f}" if m["profit_factor"] < 900 else "&#x221E;"
+    calmar_str = f"{m['calmar']:.2f}" if m["calmar"] < 900 else "&#x221E;"
 
     mode = d["mode"]
     note_benchmark = ""
@@ -310,7 +354,7 @@ def render_overview_panel(d: dict, m: dict, benchmark=None) -> str:
         note_benchmark = f"""
         <div class="bench-row">
           <div class="bench-item">
-            <span class="bench-label">SPY B&H</span>
+            <span class="bench-label">SPY B&amp;H</span>
             <span class="bench-val {'pos' if spy_ret>=0 else 'neg'}">{sign_spy}{spy_ret:.1f}%</span>
           </div>
           <div class="bench-item">
@@ -334,10 +378,13 @@ def render_overview_panel(d: dict, m: dict, benchmark=None) -> str:
     no_data = ""
     if not snaps:
         no_data = """<div class="empty-state">
-          <div class="empty-icon">🤖</div>
+          <div class="empty-icon">&#x1F916;</div>
           <div class="empty-title">Brak danych</div>
-          <div class="empty-sub">Robot uruchamia się o 23:00 UTC w dni robocze.</div>
+          <div class="empty-sub">Robot uruchamia sie o 23:00 UTC w dni robocze.</div>
         </div>"""
+
+    pnl_sign = "+" if pnl >= 0 else ""
+    ann_ret = m.get("ann_return_pct", 0) or 0
 
     return f"""
 <div class="section-header">
@@ -347,75 +394,76 @@ def render_overview_panel(d: dict, m: dict, benchmark=None) -> str:
 {no_data}
 
 <div class="kpi-grid">
-  <div class="kpi">
-    <div class="kpi-label">Wartość portfela</div>
+  <div class="kpi-card kpi-primary">
+    <div class="kpi-label">Wartosc portfela</div>
     <div class="kpi-value">{_fmt(portfolio_val)} <span class="kpi-unit">PLN</span></div>
+    <div class="kpi-change {_cls(pnl)}">{pnl_sign}{_fmt(pnl)} PLN od startu</div>
   </div>
-  <div class="kpi">
-    <div class="kpi-label">Zwrot łączny</div>
+  <div class="kpi-card">
+    <div class="kpi-label">Zwrot laczny</div>
     <div class="kpi-value {_cls(ret_pct)}">{_pct(ret_pct)}</div>
+    <div class="kpi-sub">Ann. {_pct(ann_ret)}</div>
   </div>
-  <div class="kpi">
-    <div class="kpi-label">P&amp;L</div>
-    <div class="kpi-value {_cls(pnl)}">{_sgn(pnl)}</div>
-  </div>
-  <div class="kpi">
-    <div class="kpi-label">Gotówka</div>
-    <div class="kpi-value">{_fmt(cash)} <span class="kpi-unit">PLN</span></div>
-  </div>
-  <div class="kpi">
-    <div class="kpi-label">Otwarte</div>
-    <div class="kpi-value">{d['open_count']}</div>
-  </div>
-  <div class="kpi">
-    <div class="kpi-label">Win rate</div>
+  <div class="kpi-card">
+    <div class="kpi-label">Win Rate</div>
     <div class="kpi-value">{m['win_rate']:.1f}%</div>
+    <div class="kpi-sub">{m.get('total_trades', 0)} transakcji</div>
   </div>
-  <div class="kpi">
-    <div class="kpi-label">Profit factor</div>
-    <div class="kpi-value">{pf_str}</div>
-  </div>
-  <div class="kpi">
-    <div class="kpi-label">Max drawdown</div>
+  <div class="kpi-card">
+    <div class="kpi-label">Max Drawdown</div>
     <div class="kpi-value neg">{m['max_drawdown_pct']:.1f}%</div>
+    <div class="kpi-sub">Profit factor {pf_str}</div>
   </div>
 </div>
 
 {note_benchmark}
 
-<div class="chart-card">{equity_chart if equity_chart else '<p class="muted p16">Brak danych do wykresu.</p>'}</div>
-<div class="chart-card" style="margin-top:10px">{dd_chart if dd_chart else ''}</div>
+<div class="charts-row">
+  <div class="card">
+    {equity_chart if equity_chart else '<p class="muted p16">Brak danych do wykresu.</p>'}
+    {dd_chart if dd_chart else ''}
+  </div>
+  <div class="metrics-stack">
+    <div class="metric-mini">
+      <div class="metric-mini-label">Sharpe Ratio</div>
+      <div class="metric-mini-value">{m['sharpe']:.2f}</div>
+      <div class="kpi-sub">Annualised, RF=4%</div>
+    </div>
+    <div class="metric-mini">
+      <div class="metric-mini-label">Sortino</div>
+      <div class="metric-mini-value">{m['sortino']:.2f}</div>
+      <div class="kpi-sub">Downside deviation</div>
+    </div>
+    <div class="metric-mini">
+      <div class="metric-mini-label">Calmar</div>
+      <div class="metric-mini-value">{calmar_str}</div>
+      <div class="kpi-sub">Ann. return / Max DD</div>
+    </div>
+    <div class="metric-mini">
+      <div class="metric-mini-label">Expectancy</div>
+      <div class="metric-mini-value {_cls(m['expectancy_pln'])}">{_sgn(m['expectancy_pln'], dec=0)}</div>
+      <div class="kpi-sub">Per trade</div>
+    </div>
+    <div class="metric-mini">
+      <div class="metric-mini-label">Avg R</div>
+      <div class="metric-mini-value {_cls(m['avg_r_multiple'])}">{m['avg_r_multiple']:+.2f}R</div>
+      <div class="kpi-sub">Reward / risk units</div>
+    </div>
+    <div class="metric-mini">
+      <div class="metric-mini-label">Avg hold</div>
+      <div class="metric-mini-value">{m['avg_holding_days']:.1f}d</div>
+      <div class="kpi-sub">Days per trade</div>
+    </div>
+  </div>
+</div>
 
-<div class="metrics-grid">
-  <div class="metric-card">
-    <div class="metric-label">Sharpe Ratio</div>
-    <div class="metric-value">{m['sharpe']:.2f}</div>
-    <div class="metric-sub">Annualised, RF=4%</div>
-  </div>
-  <div class="metric-card">
-    <div class="metric-label">Sortino Ratio</div>
-    <div class="metric-value">{m['sortino']:.2f}</div>
-    <div class="metric-sub">Downside deviation</div>
-  </div>
-  <div class="metric-card">
-    <div class="metric-label">Calmar Ratio</div>
-    <div class="metric-value">{calmar_str}</div>
-    <div class="metric-sub">Ann. return / Max DD</div>
-  </div>
-  <div class="metric-card">
-    <div class="metric-label">Expectancy</div>
-    <div class="metric-value {_cls(m['expectancy_pln'])}">{_sgn(m['expectancy_pln'], dec=0)}</div>
-    <div class="metric-sub">Per trade</div>
-  </div>
-  <div class="metric-card">
-    <div class="metric-label">Avg R-multiple</div>
-    <div class="metric-value {_cls(m['avg_r_multiple'])}">{m['avg_r_multiple']:+.2f}R</div>
-    <div class="metric-sub">Reward / risk units</div>
-  </div>
-  <div class="metric-card">
-    <div class="metric-label">Avg holding</div>
-    <div class="metric-value">{m['avg_holding_days']:.1f}</div>
-    <div class="metric-sub">Days per trade</div>
+<div class="card" style="margin-top:16px">
+  <div class="card-title">Portfolio Details</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px">
+    <div><div class="kpi-label">Gotowka</div><div style="font-size:16px;font-weight:600;color:var(--text);margin-top:4px">{_fmt(cash)} PLN</div></div>
+    <div><div class="kpi-label">Otwarte pozycje</div><div style="font-size:16px;font-weight:600;color:var(--text);margin-top:4px">{d['open_count']}</div></div>
+    <div><div class="kpi-label">Profit Factor</div><div style="font-size:16px;font-weight:600;color:var(--text);margin-top:4px">{pf_str}</div></div>
+    <div><div class="kpi-label">Avg hold</div><div style="font-size:16px;font-weight:600;color:var(--text);margin-top:4px">{m['avg_holding_days']:.1f}d</div></div>
   </div>
 </div>"""
 
@@ -424,9 +472,9 @@ def render_positions_panel(d: dict) -> str:
     trades = d["open_trades"]
     if not trades:
         return """<div class="empty-state">
-          <div class="empty-icon">📭</div>
+          <div class="empty-icon">&#x1F4ED;</div>
           <div class="empty-title">Brak otwartych pozycji</div>
-          <div class="empty-sub">Nowe pozycje pojawią się po spełnieniu warunków strategii.</div>
+          <div class="empty-sub">Nowe pozycje pojawia sie po spelnieniu warunkow strategii.</div>
         </div>"""
 
     rows = []
@@ -450,11 +498,11 @@ def render_positions_panel(d: dict) -> str:
             f"</tr>"
         )
 
-    return f"""<p class="table-hint">Kliknij wiersz, żeby zobaczyć szczegóły transakcji</p>
+    return f"""<p class="table-hint">Kliknij wiersz, zeby zobaczyc szczegoly transakcji</p>
 <div class="table-scroll">
 <table>
 <thead><tr>
-  <th>Ticker</th><th>Strategia</th><th>Wejście</th><th>Cena wej.</th>
+  <th>Ticker</th><th>Strategia</th><th>Wejscie</th><th>Cena wej.</th>
   <th>Stop Loss</th><th>Take Profit</th><th>Akcje</th><th>Czas</th>
   <th>P&amp;L PLN</th><th>P&amp;L %</th>
 </tr></thead>
@@ -475,8 +523,8 @@ def render_trades_panel(d: dict, limit: int = 100) -> str:
         pnl = t.get("pnl_pln")
         pnl_pct = t.get("pnl_pct")
         r = t.get("r_multiple")
-        exit_date = t.get("exit_date") or "—"
-        exit_reason = t.get("exit_reason") or "—"
+        exit_date = t.get("exit_date") or "&#x2014;"
+        exit_reason = t.get("exit_reason") or "&#x2014;"
         tid = t.get("id", "")
         rows.append(
             f"<tr class='tr-click' onclick='showTrade({tid})'>"
@@ -488,19 +536,19 @@ def render_trades_panel(d: dict, limit: int = 100) -> str:
             f"<td class='mono {_cls(pnl) if pnl is not None else ''}'>"
             f"{'live' if pnl is None else _sgn(pnl)}</td>"
             f"<td class='mono {_cls(pnl_pct) if pnl_pct is not None else ''}'>"
-            f"{'—' if pnl_pct is None else _pct(pnl_pct)}</td>"
-            f"<td class='mono'>{f'{r:+.2f}R' if r is not None else '—'}</td>"
+            f"{'&#x2014;' if pnl_pct is None else _pct(pnl_pct)}</td>"
+            f"<td class='mono'>{f'{r:+.2f}R' if r is not None else '&#x2014;'}</td>"
             f"<td class='mono small'>{exit_reason}</td>"
             f"</tr>"
         )
 
-    return f"""<p class="table-hint">Kliknij wiersz, żeby zobaczyć szczegóły</p>
+    return f"""<p class="table-hint">Kliknij wiersz, zeby zobaczyc szczegoly</p>
 <div class="table-scroll">
 <table>
 <thead><tr>
   <th>Status</th><th>Ticker</th><th>Strategia</th>
-  <th>Wejście</th><th>Wyjście</th>
-  <th>P&amp;L PLN</th><th>P&amp;L %</th><th>R</th><th>Powód wyjścia</th>
+  <th>Wejscie</th><th>Wyjscie</th>
+  <th>P&amp;L PLN</th><th>P&amp;L %</th><th>R</th><th>Powod wyjscia</th>
 </tr></thead>
 <tbody>{"".join(rows)}</tbody>
 </table></div>"""
@@ -512,6 +560,32 @@ def render_strategies_panel(d: dict, m: dict) -> str:
 
     if not strats:
         return "<p class='muted p16'>Brak danych o strategiach.</p>"
+
+    _STRATEGY_ICONS = {
+        "MEAN_REVERSION": ("MR", "background:rgba(59,130,246,0.2);color:#3b82f6"),
+        "MOMENTUM_BREAKOUT": ("MB", "background:rgba(16,185,129,0.2);color:#10b981"),
+        "PULLBACK_TREND": ("PT", "background:rgba(245,158,11,0.2);color:#f59e0b"),
+        "ETF_RELATIVE_STRENGTH": ("ET", "background:rgba(139,92,246,0.2);color:#8b5cf6"),
+    }
+
+    cards = []
+    for s in strats:
+        pnl = s.get("total_pnl") or 0
+        wins = int(s.get("wins") or 0)
+        n = int(s.get("n") or 0)
+        wr = s.get("win_rate") or 0
+        strat_key = s["strategy"]
+        icon_label, icon_style = _STRATEGY_ICONS.get(strat_key, ("ST", "background:rgba(100,116,139,0.2);color:#64748b"))
+        cards.append(
+            f"<div class='strategy-card'>"
+            f"<div class='strategy-icon' style='{icon_style}'>{icon_label}</div>"
+            f"<div class='strategy-info'>"
+            f"<div class='strategy-name'>{strat_key.replace('_', ' ')}</div>"
+            f"<div class='strategy-meta'>{n} transakcji &middot; Win {wr:.0f}%</div>"
+            f"</div>"
+            f"<div class='strategy-pnl {_cls(pnl)}'>{_sgn(pnl)}</div>"
+            f"</div>"
+        )
 
     rows = []
     for s in strats:
@@ -537,9 +611,13 @@ def render_strategies_panel(d: dict, m: dict) -> str:
     streak_loss = m["max_loss_streak"]
 
     return f"""
+<div class="strategy-grid" style="margin-bottom:24px">
+  {"".join(cards)}
+</div>
+
 <div class="grid2">
-  <div>
-    <h3 class="section-title">Wyniki wg strategii</h3>
+  <div class="card">
+    <div class="card-title">Wyniki wg strategii</div>
     <div class="table-scroll">
     <table>
     <thead><tr>
@@ -549,8 +627,8 @@ def render_strategies_panel(d: dict, m: dict) -> str:
     <tbody>{"".join(rows)}</tbody>
     </table></div>
   </div>
-  <div>
-    <h3 class="section-title">Statystyki globalne</h3>
+  <div class="card">
+    <div class="card-title">Statystyki globalne</div>
     <div class="stat-list">
       <div class="stat-row"><span>Avg zysk</span><span class="pos mono">{avg_win_str}</span></div>
       <div class="stat-row"><span>Avg strata</span><span class="neg mono">{avg_loss_str}</span></div>
@@ -561,16 +639,16 @@ def render_strategies_panel(d: dict, m: dict) -> str:
     </div>
   </div>
 </div>
-<div class="chart-card" style="margin-top:16px">{pnl_chart}</div>"""
+<div class="card" style="margin-top:16px">{pnl_chart}</div>"""
 
 
 def render_signals_panel(d: dict) -> str:
     signals = d["pending_signals"]
     if not signals:
         return """<div class="empty-state">
-          <div class="empty-icon">📡</div>
-          <div class="empty-title">Brak oczekujących sygnałów</div>
-          <div class="empty-sub">Sygnały pojawiają się po wieczornym skanie (23:00 UTC).</div>
+          <div class="empty-icon">&#x1F4E1;</div>
+          <div class="empty-title">Brak oczekujacych sygnalow</div>
+          <div class="empty-sub">Sygnaly pojawiaja sie po wieczornym skanie (23:00 UTC).</div>
         </div>"""
 
     rows = []
@@ -593,7 +671,7 @@ def render_signals_panel(d: dict) -> str:
 <table>
 <thead><tr>
   <th>Ticker</th><th>Strategia</th><th>Data</th><th>Score</th>
-  <th>Entry</th><th>Stop</th><th>Target</th><th>RSI</th><th>Powód</th>
+  <th>Entry</th><th>Stop</th><th>Target</th><th>RSI</th><th>Powod</th>
 </tr></thead>
 <tbody>{"".join(rows)}</tbody>
 </table></div>"""
@@ -658,7 +736,7 @@ def render_yearly_breakdown(snapshots: list, closed_trades: list) -> str:
             f"<td class='mono {ret_cls}'>{_pct(ret)}</td>"
             f"<td class='mono {pnl_cls}'>{_sgn(pnl_sum)}</td>"
             f"<td class='mono'>{len(ty)}</td>"
-            f"<td class='mono'>{'—' if not ty else f'{wr:.0f}%'}</td>"
+            f"<td class='mono'>{'&#x2014;' if not ty else f'{wr:.0f}%'}</td>"
             f"<td class='mono'>{sharpe:.2f}</td>"
             f"</tr>"
         )
@@ -695,35 +773,35 @@ def render_analysis_panel(d: dict, m: dict) -> str:
         pnl = t.get("pnl_pln") or 0
         pnl_pct = t.get("pnl_pct") or 0
         return (f"<tr><td><b>{t['ticker']}</b></td>"
-                f"<td class='mono'>{t.get('exit_date','—')}</td>"
+                f"<td class='mono'>{t.get('exit_date','&#x2014;')}</td>"
                 f"<td class='mono {_cls(pnl)}'>{_sgn(pnl)}</td>"
                 f"<td class='mono {_cls(pnl_pct)}'>{_pct(pnl_pct)}</td></tr>")
 
-    best_rows = "".join(trade_mini_row(t) for t in best5) or "<tr><td colspan=4>—</td></tr>"
-    worst_rows = "".join(trade_mini_row(t) for t in worst5) or "<tr><td colspan=4>—</td></tr>"
+    best_rows = "".join(trade_mini_row(t) for t in best5) or "<tr><td colspan=4>&#x2014;</td></tr>"
+    worst_rows = "".join(trade_mini_row(t) for t in worst5) or "<tr><td colspan=4>&#x2014;</td></tr>"
 
     yearly_table = render_yearly_breakdown(d["snapshots"], d["closed_trades"])
 
     return f"""
-<div class="section-block">
-  <h3 class="section-title">Zestawienie roczne</h3>
+<div class="card section-block">
+  <div class="card-title">Zestawienie roczne</div>
   {yearly_table}
 </div>
 
-<div class="section-block" style="margin-top:20px">
-  <h3 class="section-title">Miesięczny P&amp;L</h3>
+<div class="card section-block" style="margin-top:16px">
+  <div class="card-title">Miesieczny P&amp;L</div>
   {heatmap}
 </div>
 
-<div class="grid2" style="margin-top:20px">
-  <div>
-    <h3 class="section-title">Powody zamknięcia</h3>
+<div class="grid2" style="margin-top:16px">
+  <div class="card">
+    <div class="card-title">Powody zamkniecia</div>
     <div class="stat-list">{reasons_rows}</div>
   </div>
-  <div>
-    <h3 class="section-title">Łączne statystyki</h3>
+  <div class="card">
+    <div class="card-title">Laczne statystyki</div>
     <div class="stat-list">
-      <div class="stat-row"><span>Zwrot łączny</span>
+      <div class="stat-row"><span>Zwrot laczny</span>
         <span class="mono {_cls(m['total_return_pct'])}">{_pct(m['total_return_pct'])}</span></div>
       <div class="stat-row"><span>Zwrot ann.</span>
         <span class="mono {_cls(m['ann_return_pct'])}">{_pct(m['ann_return_pct'])}</span></div>
@@ -737,15 +815,15 @@ def render_analysis_panel(d: dict, m: dict) -> str:
   </div>
 </div>
 
-<div class="grid2" style="margin-top:20px">
-  <div>
-    <h3 class="section-title">🏆 Top 5 zyski</h3>
+<div class="grid2" style="margin-top:16px">
+  <div class="card">
+    <div class="card-title">Top 5 zyski</div>
     <div class="table-scroll"><table>
     <thead><tr><th>Ticker</th><th>Data</th><th>P&amp;L</th><th>%</th></tr></thead>
     <tbody>{best_rows}</tbody></table></div>
   </div>
-  <div>
-    <h3 class="section-title">📉 Top 5 straty</h3>
+  <div class="card">
+    <div class="card-title">Top 5 straty</div>
     <div class="table-scroll"><table>
     <thead><tr><th>Ticker</th><th>Data</th><th>P&amp;L</th><th>%</th></tr></thead>
     <tbody>{worst_rows}</tbody></table></div>
@@ -821,241 +899,607 @@ def build_html(live: dict, live_m: dict, bt: dict, bt_m: dict,
     bt_strategies = render_strategies_panel(bt, bt_m)
     bt_analysis = render_analysis_panel(bt, bt_m)
 
+    # right panel content
+    live_signals_mini = render_right_panel_signals(live["pending_signals"])
+    live_positions_mini = render_right_panel_positions(live["open_trades"])
+    bt_signals_mini = "<p class='panel-empty'>Tylko tryb Live</p>"
+    bt_positions_mini = render_right_panel_positions(bt["open_trades"])
+
     return f"""<!DOCTYPE html>
 <html lang="pl">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Market Edge Paper Trader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 <style>
-:root{{
-  --bg:#0d1117;
-  --surface:#161b22;
-  --surface2:#1c2128;
-  --border:#21262d;
-  --border2:#30363d;
-  --text:#e6edf3;
-  --muted:#8b949e;
-  --accent:#388bfd;
-  --green:#2ea043;
-  --red:#f85149;
-  --yellow:#d29922;
+:root {{
+  --bg: #0a0e1a;
+  --surface: #111827;
+  --surface2: #1a2235;
+  --border: #1e2d3d;
+  --border2: #2a3a4d;
+  --accent: #3b82f6;
+  --accent-glow: rgba(59,130,246,0.15);
+  --green: #10b981;
+  --green-bg: rgba(16,185,129,0.1);
+  --red: #ef4444;
+  --red-bg: rgba(239,68,68,0.1);
+  --yellow: #f59e0b;
+  --text: #f1f5f9;
+  --text2: #94a3b8;
+  --text3: #4b6280;
+  --sidebar-w: 220px;
+  --header-h: 60px;
+  --right-w: 280px;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-lg: 0 4px 20px rgba(0,0,0,0.5);
+  --font: 'Inter', system-ui, -apple-system, sans-serif;
 }}
-*{{box-sizing:border-box;margin:0;padding:0}}
-html{{height:100%}}
-body{{
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-  background:var(--bg);color:var(--text);
-  font-size:13px;line-height:1.5;height:100%;
+* {{ box-sizing: border-box; margin: 0; padding: 0; }}
+html, body {{ height: 100%; }}
+body {{
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.5;
 }}
-/* lock */
-#lock{{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999}}
-.lock-box{{background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:40px 36px;text-align:center;max-width:340px;width:90%}}
-.lock-logo{{font-size:32px;margin-bottom:16px}}
-.lock-title{{color:var(--text);font-size:20px;font-weight:700;margin-bottom:6px}}
-.lock-sub{{color:var(--muted);font-size:13px;margin-bottom:24px}}
-#pw-in{{width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border2);background:var(--bg);color:var(--text);font-size:14px;outline:none}}
-#pw-in:focus{{border-color:var(--accent)}}
-.lock-btn{{margin-top:10px;width:100%;padding:10px;border:none;border-radius:8px;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer}}
-.lock-btn:hover{{background:#1f6feb}}
-#pw-err{{display:none;margin-top:10px;color:var(--red);font-size:12px}}
-/* app */
-#app{{display:none;height:100%;flex-direction:column}}
-/* header */
-.header{{
-  background:var(--surface);border-bottom:1px solid var(--border);
-  display:flex;align-items:center;gap:16px;padding:0 20px;height:52px;
-  flex-shrink:0;
+
+/* ── LOCK SCREEN ── */
+#lock-screen {{
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 9999;
 }}
-.brand{{display:flex;align-items:center;gap:8px;flex:1}}
-.brand-icon{{color:var(--accent);font-size:18px;font-weight:700}}
-.brand-name{{font-size:15px;font-weight:700;color:var(--text)}}
-.brand-sep{{color:var(--border2)}}
-.brand-sub{{color:var(--muted);font-size:12px}}
-.mode-toggle{{display:flex;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:3px}}
-.mode-btn{{padding:4px 14px;border:none;border-radius:6px;background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;transition:.15s}}
-.mode-btn.active{{background:var(--accent);color:#fff}}
-.header-meta{{color:var(--muted);font-size:11px;white-space:nowrap}}
-.dot{{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;margin-right:5px;animation:pulse 2s infinite}}
-@keyframes pulse{{0%,100%{{opacity:1}}50%{{opacity:.4}}}}
-/* nav */
-.nav{{
-  background:var(--surface);border-bottom:1px solid var(--border);
-  display:flex;gap:2px;padding:0 16px;flex-shrink:0;
+.lock-logo {{ font-size: 48px; color: var(--accent); margin-bottom: 8px; }}
+.lock-title {{ font-size: 24px; font-weight: 700; color: var(--text); margin-bottom: 4px; }}
+.lock-sub {{ font-size: 14px; color: var(--text2); margin-bottom: 32px; }}
+.lock-form {{ display: flex; flex-direction: column; align-items: center; gap: 12px; width: 300px; }}
+.lock-input {{
+  width: 100%; padding: 12px 16px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text); font-size: 15px; outline: none;
+  font-family: var(--font);
 }}
-.nav-tab{{
-  padding:12px 16px;border:none;background:none;color:var(--muted);
-  font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;
-  margin-bottom:-1px;transition:.15s;white-space:nowrap;
+.lock-input:focus {{ border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }}
+.lock-btn {{
+  width: 100%; padding: 12px;
+  background: var(--accent); border: none;
+  border-radius: var(--radius-sm); color: white;
+  font-size: 15px; font-weight: 600; cursor: pointer;
+  font-family: var(--font);
 }}
-.nav-tab.active{{color:var(--text);border-bottom-color:var(--accent)}}
-.nav-tab:hover:not(.active){{color:var(--text)}}
-/* content */
-.content{{flex:1;overflow-y:auto;padding:20px}}
-.panel{{display:none;max-width:1200px;margin:0 auto}}
-.panel.visible{{display:block}}
-/* KPIs */
-.kpi-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:16px}}
-.kpi{{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}}
-.kpi-label{{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}}
-.kpi-value{{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}}
-.kpi-unit{{font-size:12px;color:var(--muted);font-weight:400}}
-/* metrics grid */
-.metrics-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-top:16px}}
-.metric-card{{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px}}
-.metric-label{{font-size:11px;color:var(--muted);margin-bottom:4px}}
-.metric-value{{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}}
-.metric-sub{{font-size:10px;color:var(--muted);margin-top:2px}}
-/* benchmark row */
-.bench-row{{display:flex;gap:16px;flex-wrap:wrap;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:16px}}
-.bench-item{{display:flex;flex-direction:column}}
-.bench-label{{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}}
-.bench-val{{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}}
-/* charts */
-.chart-card{{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 8px}}
-/* grid */
-.grid2{{display:grid;grid-template-columns:1fr 1fr;gap:16px}}
-@media(max-width:680px){{.grid2{{grid-template-columns:1fr}}}}
-/* tables */
-.table-scroll{{overflow-x:auto}}
-table{{width:100%;border-collapse:collapse;font-size:12px}}
-th{{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border2);color:var(--muted);font-weight:600;white-space:nowrap;font-size:11px}}
-td{{text-align:left;padding:7px 10px;border-bottom:1px solid var(--border);white-space:nowrap}}
-tr:hover td{{background:var(--surface2)}}
-.mono{{font-variant-numeric:tabular-nums;font-size:12px}}
-.small{{font-size:11px;color:var(--muted)}}
-/* badges */
-.badge{{display:inline-block;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700}}
-.badge-open{{background:rgba(46,160,67,.15);color:var(--green);border:1px solid rgba(46,160,67,.3)}}
-.badge-closed{{background:rgba(139,148,158,.12);color:var(--muted);border:1px solid rgba(139,148,158,.2)}}
-/* colors */
-.pos{{color:var(--green)}}
-.neg{{color:var(--red)}}
-.muted{{color:var(--muted)}}
-/* heatmap */
-.heatmap{{border-collapse:separate;border-spacing:3px}}
-.heatmap th,.heatmap td{{border:none;border-radius:4px;padding:5px 8px;font-size:11px;text-align:center;white-space:nowrap}}
-.heatmap th{{background:transparent;color:var(--muted);padding:4px 8px}}
-.hm-year{{color:var(--muted);background:transparent!important;font-weight:700;text-align:right!important;padding-right:12px!important}}
-.hm-empty{{background:var(--surface2);color:var(--muted)}}
-.hm-total{{background:var(--surface2);font-weight:700}}
-/* stat list */
-.stat-list{{display:flex;flex-direction:column;gap:6px}}
-.stat-row{{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:var(--surface2);border-radius:6px;font-size:12px}}
-.stat-row span:first-child{{color:var(--muted)}}
-/* section */
-.section-header{{display:flex;align-items:center;gap:12px;margin-bottom:16px}}
-.period-tag{{background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600}}
-.section-title{{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}}
-.section-block{{margin-bottom:20px}}
-/* empty state */
-.empty-state{{text-align:center;padding:60px 20px;color:var(--muted)}}
-.empty-icon{{font-size:40px;margin-bottom:12px}}
-.empty-title{{font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px}}
-.empty-sub{{font-size:13px}}
-.p16{{padding:16px 0}}
-/* note */
-.disclaimer{{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--muted);margin-top:20px}}
-/* clickable rows */
-.tr-click{{cursor:pointer;transition:background .1s}}
-.tr-click:hover td{{background:rgba(56,139,253,.08)!important}}
-.table-hint{{font-size:11px;color:var(--muted);margin-bottom:6px}}
-/* trade modal */
-#trade-modal{{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:8000;align-items:center;justify-content:center;padding:16px}}
-#trade-modal.open{{display:flex}}
-.modal-box{{background:var(--surface);border:1px solid var(--border2);border-radius:14px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto}}
-.modal-header{{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 12px;border-bottom:1px solid var(--border)}}
-.modal-ticker{{font-size:22px;font-weight:800;letter-spacing:.02em}}
-.modal-close{{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;padding:2px 6px;border-radius:4px}}
-.modal-close:hover{{background:var(--surface2);color:var(--text)}}
-.modal-body{{padding:16px 20px 20px}}
-.modal-section{{margin-bottom:14px}}
-.modal-section-title{{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px;font-weight:700}}
-.modal-grid{{display:grid;grid-template-columns:1fr 1fr;gap:8px}}
-.modal-field{{background:var(--surface2);border-radius:8px;padding:10px 12px}}
-.modal-field-label{{font-size:10px;color:var(--muted);margin-bottom:3px}}
-.modal-field-value{{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}}
-.modal-reason{{background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--muted);line-height:1.5}}
+.lock-btn:hover {{ background: #2563eb; }}
+.lock-error {{ color: var(--red); font-size: 13px; display: none; }}
+
+/* ── APP SHELL ── */
+#app {{ display: none; height: 100%; flex-direction: column; }}
+
+/* ── HEADER ── */
+#header {{
+  height: var(--header-h);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px;
+  position: sticky; top: 0; z-index: 100;
+  flex-shrink: 0;
+}}
+.header-left {{ display: flex; align-items: center; gap: 0; }}
+.logo {{ display: flex; align-items: center; gap: 8px; }}
+.logo-icon {{ font-size: 20px; color: var(--accent); }}
+.logo-text {{ font-size: 16px; font-weight: 700; color: var(--text); }}
+.logo-sub {{ font-size: 11px; color: var(--text3); margin-top: 2px; }}
+.engine-tabs {{
+  display: flex; background: var(--bg);
+  border-radius: var(--radius-sm); padding: 3px; margin-left: 24px;
+}}
+.engine-tab {{
+  padding: 5px 14px; border: none; background: transparent;
+  color: var(--text2); border-radius: 6px; cursor: pointer;
+  font-size: 13px; font-weight: 500; font-family: var(--font);
+}}
+.engine-tab.active {{ background: var(--surface2); color: var(--text); }}
+.header-center {{ display: flex; align-items: center; }}
+.mode-tabs {{
+  display: flex; background: var(--bg);
+  border-radius: var(--radius-sm); padding: 3px;
+}}
+.mode-tab {{
+  padding: 6px 16px; border: none; background: transparent;
+  color: var(--text2); border-radius: 6px; cursor: pointer;
+  font-size: 13px; font-weight: 500; font-family: var(--font);
+  transition: all 0.15s;
+}}
+.mode-tab.active {{ background: var(--accent); color: white; }}
+.header-right {{ display: flex; align-items: center; }}
+.update-time {{ font-size: 12px; color: var(--text3); }}
+.dot-live {{
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green); display: inline-block; margin-right: 5px;
+  animation: pulse 2s infinite;
+}}
+@keyframes pulse {{ 0%,100% {{ opacity:1 }} 50% {{ opacity:.4 }} }}
+
+/* ── BODY WRAP ── */
+#body-wrap {{
+  display: flex;
+  height: calc(100vh - var(--header-h));
+  overflow: hidden;
+}}
+
+/* ── SIDEBAR ── */
+#sidebar {{
+  width: var(--sidebar-w);
+  min-height: 100%;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 16px 0;
+  flex-shrink: 0;
+  overflow-y: auto;
+}}
+.nav-section-label {{
+  font-size: 10px; text-transform: uppercase;
+  letter-spacing: 0.8px; color: var(--text3);
+  font-weight: 600; padding: 8px 20px 4px;
+  margin-top: 8px;
+}}
+.nav-item {{
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 20px; color: var(--text2);
+  cursor: pointer; font-size: 14px; font-weight: 500;
+  transition: all 0.15s;
+  border-left: 3px solid transparent;
+  text-decoration: none;
+}}
+.nav-item:hover {{ background: var(--surface2); color: var(--text); }}
+.nav-item.active {{
+  background: var(--accent-glow);
+  color: var(--accent);
+  border-left-color: var(--accent);
+}}
+.nav-icon {{ font-size: 15px; width: 20px; text-align: center; }}
+.sidebar-divider {{
+  height: 1px; background: var(--border);
+  margin: 12px 16px;
+}}
+
+/* ── MAIN ── */
+#main {{
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  background: var(--bg);
+}}
+.tab-panel {{ display: none; }}
+.tab-panel.active {{ display: block; }}
+
+/* ── RIGHT PANEL ── */
+#right-panel {{
+  width: var(--right-w);
+  min-height: 100%;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  flex-shrink: 0;
+}}
+.panel-section {{ padding: 16px; border-bottom: 1px solid var(--border); }}
+.panel-title {{
+  font-size: 11px; text-transform: uppercase;
+  letter-spacing: 0.8px; color: var(--text3);
+  font-weight: 600; margin-bottom: 12px;
+}}
+.panel-empty {{ font-size: 12px; color: var(--text3); padding: 8px 0; }}
+.signal-row {{
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+}}
+.signal-row:last-child {{ border-bottom: none; }}
+.signal-ticker {{ font-weight: 600; color: var(--text); }}
+.signal-score {{ color: var(--accent); font-weight: 600; font-size: 12px; }}
+.signal-rr {{ color: var(--text2); font-size: 11px; }}
+.pos-row {{
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+}}
+.pos-row:last-child {{ border-bottom: none; }}
+.pos-ticker {{ font-weight: 600; color: var(--text); }}
+.pos-pnl {{ font-size: 12px; font-weight: 600; }}
+
+/* ── CARDS ── */
+.card {{
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  transition: border-color 0.2s;
+}}
+.card:hover {{ border-color: var(--border2); }}
+.card-title {{
+  font-size: 11px; text-transform: uppercase;
+  letter-spacing: 0.8px; color: var(--text3);
+  font-weight: 600; margin-bottom: 16px;
+}}
+
+/* ── KPI GRID ── */
+.kpi-grid {{
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}}
+@media (max-width: 1100px) {{ .kpi-grid {{ grid-template-columns: repeat(2, 1fr); }} }}
+.kpi-card {{
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+}}
+.kpi-primary {{
+  background: linear-gradient(135deg, #1a2235 0%, #1e2d42 100%);
+  border-color: var(--accent);
+  box-shadow: 0 0 20px rgba(59,130,246,0.1);
+}}
+.kpi-value {{
+  font-size: 28px; font-weight: 700;
+  color: var(--text); letter-spacing: -0.5px; margin: 4px 0;
+}}
+.kpi-label {{
+  font-size: 11px; text-transform: uppercase;
+  letter-spacing: 0.8px; color: var(--text3); font-weight: 600;
+}}
+.kpi-unit {{ font-size: 14px; font-weight: 400; color: var(--text2); }}
+.kpi-change {{ font-size: 12px; margin-top: 4px; }}
+.kpi-sub {{ font-size: 12px; color: var(--text3); margin-top: 4px; }}
+
+/* ── CHARTS ROW ── */
+.charts-row {{
+  display: grid;
+  grid-template-columns: 1fr 200px;
+  gap: 16px;
+  margin-bottom: 24px;
+}}
+@media (max-width: 900px) {{ .charts-row {{ grid-template-columns: 1fr; }} }}
+.metrics-stack {{ display: flex; flex-direction: column; gap: 12px; }}
+.metric-mini {{
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}}
+.metric-mini-label {{
+  font-size: 10px; text-transform: uppercase;
+  letter-spacing: 0.8px; color: var(--text3); font-weight: 600;
+}}
+.metric-mini-value {{
+  font-size: 20px; font-weight: 700;
+  color: var(--text); margin-top: 4px;
+}}
+
+/* ── STRATEGY CARDS ── */
+.strategy-grid {{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}}
+.strategy-card {{
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  display: flex; align-items: center; gap: 14px;
+  cursor: pointer; transition: all 0.15s;
+}}
+.strategy-card:hover {{
+  border-color: var(--border2);
+  transform: translateY(-1px);
+}}
+.strategy-icon {{
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; flex-shrink: 0;
+}}
+.strategy-info {{ flex: 1; }}
+.strategy-name {{ font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }}
+.strategy-meta {{ font-size: 12px; color: var(--text3); }}
+.strategy-pnl {{ font-size: 16px; font-weight: 700; }}
+
+/* ── BENCHMARK ROW ── */
+.bench-row {{
+  display: flex; gap: 16px; flex-wrap: wrap;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px 16px; margin-bottom: 16px;
+}}
+.bench-item {{ display: flex; flex-direction: column; }}
+.bench-label {{ font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.04em; }}
+.bench-val {{ font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }}
+
+/* ── GRID ── */
+.grid2 {{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }}
+@media (max-width: 768px) {{ .grid2 {{ grid-template-columns: 1fr; }} }}
+
+/* ── TABLES ── */
+.table-scroll {{ overflow-x: auto; }}
+table {{ width: 100%; border-collapse: collapse; font-size: 13px; }}
+thead th {{
+  padding: 10px 12px; text-align: left;
+  font-size: 11px; text-transform: uppercase;
+  letter-spacing: 0.6px; color: var(--text3); font-weight: 600;
+  border-bottom: 1px solid var(--border); white-space: nowrap;
+}}
+tbody tr {{ border-bottom: 1px solid var(--border); transition: background 0.1s; cursor: pointer; }}
+tbody tr:hover {{ background: var(--surface2); }}
+tbody td {{ padding: 10px 12px; color: var(--text2); }}
+tbody td:first-child {{ color: var(--text); font-weight: 600; }}
+.mono {{ font-variant-numeric: tabular-nums; font-size: 12px; }}
+.small {{ font-size: 11px; color: var(--text3); }}
+
+/* ── HEATMAP ── */
+.heatmap {{ border-collapse: separate; border-spacing: 3px; }}
+.heatmap th, .heatmap td {{
+  border: none; border-radius: 4px;
+  padding: 5px 8px; font-size: 11px;
+  text-align: center; white-space: nowrap;
+}}
+.heatmap th {{ background: transparent; color: var(--text3); padding: 4px 8px; }}
+.hm-year {{
+  color: var(--text3); background: transparent !important;
+  font-weight: 700; text-align: right !important; padding-right: 12px !important;
+}}
+.hm-empty {{ background: var(--surface2); color: var(--text3); }}
+.hm-total {{ background: var(--surface2); font-weight: 700; }}
+
+/* ── STAT LIST ── */
+.stat-list {{ display: flex; flex-direction: column; gap: 6px; }}
+.stat-row {{
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 10px; background: var(--surface2);
+  border-radius: 6px; font-size: 12px;
+}}
+.stat-row span:first-child {{ color: var(--text3); }}
+
+/* ── SECTION / MISC ── */
+.section-header {{ display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }}
+.period-tag {{
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text3); border-radius: 6px;
+  padding: 3px 10px; font-size: 11px; font-weight: 600;
+}}
+.section-title {{
+  font-size: 12px; font-weight: 600; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px;
+}}
+.section-block {{ margin-bottom: 16px; }}
+.empty-state {{
+  text-align: center; padding: 60px 20px; color: var(--text3);
+}}
+.empty-icon {{ font-size: 40px; margin-bottom: 12px; }}
+.empty-title {{ font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px; }}
+.empty-sub {{ font-size: 13px; }}
+.p16 {{ padding: 16px 0; }}
+.muted {{ color: var(--text3); }}
+
+/* ── BADGES ── */
+.badge {{
+  display: inline-block; border-radius: 4px;
+  padding: 2px 7px; font-size: 10px; font-weight: 700;
+}}
+.badge-open {{
+  background: var(--green-bg); color: var(--green);
+  border: 1px solid rgba(16,185,129,0.3);
+}}
+.badge-closed {{
+  background: rgba(100,116,139,0.12); color: var(--text3);
+  border: 1px solid rgba(100,116,139,0.2);
+}}
+
+/* ── COLORS ── */
+.pos {{ color: var(--green); }}
+.neg {{ color: var(--red); }}
+
+/* ── CLICKABLE ROWS ── */
+.tr-click {{ cursor: pointer; transition: background 0.1s; }}
+.tr-click:hover td {{ background: rgba(59,130,246,0.06) !important; }}
+.table-hint {{ font-size: 11px; color: var(--text3); margin-bottom: 8px; }}
+
+/* ── DISCLAIMER ── */
+.disclaimer {{
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 14px;
+  font-size: 11px; color: var(--text3); margin-top: 20px;
+}}
+
+/* ── TRADE MODAL ── */
+#trade-modal {{
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+  display: none; align-items: center; justify-content: center;
+}}
+#trade-modal.open {{ display: flex; }}
+.modal-box {{
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  width: 520px; max-width: 95vw; max-height: 85vh;
+  overflow-y: auto; box-shadow: var(--shadow-lg); padding: 28px;
+}}
+.modal-title {{ font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 20px; }}
+.modal-close {{
+  float: right; background: none; border: none;
+  color: var(--text3); font-size: 20px; cursor: pointer;
+}}
+.modal-close:hover {{ color: var(--text); }}
+.modal-header {{
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}}
+.modal-ticker {{ font-size: 22px; font-weight: 800; letter-spacing: 0.02em; }}
+.modal-body-inner {{ padding: 0; }}
+.modal-section {{ margin-bottom: 14px; }}
+.modal-section-title {{
+  font-size: 10px; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--text3);
+  margin-bottom: 8px; font-weight: 700;
+}}
+.modal-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }}
+.modal-field {{ background: var(--surface); border-radius: 8px; padding: 10px 12px; border: 1px solid var(--border); }}
+.modal-field-label {{ font-size: 10px; color: var(--text3); margin-bottom: 3px; }}
+.modal-field-value {{ font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); }}
+.modal-reason {{
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 12px;
+  font-size: 12px; color: var(--text2); line-height: 1.5;
+}}
+
+/* ── INTRADAY OVERLAY ── */
+#intraday-overlay {{
+  display: none; position: fixed;
+  inset: var(--header-h) 0 0 0;
+  background: var(--bg); z-index: 100;
+  flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+}}
 </style>
 </head>
 <body>
-<div id="lock">
-  <div class="lock-box">
-    <div class="lock-logo">▲</div>
-    <div class="lock-title">Market Edge</div>
-    <div class="lock-sub">Paper Trading Terminal — wpisz hasło</div>
-    <input id="pw-in" type="password" placeholder="Hasło..." autofocus autocomplete="current-password">
-    <button class="lock-btn" onclick="window._checkPw(document.getElementById('pw-in').value)">Wejdź</button>
-    <div id="pw-err">Nieprawidłowe hasło</div>
+
+<!-- Lock Screen -->
+<div id="lock-screen">
+  <div class="lock-logo">&#x25B2;</div>
+  <div class="lock-title">Market Edge</div>
+  <div class="lock-sub">Paper Trading Terminal &#x2014; wpisz haslo</div>
+  <div class="lock-form">
+    <input id="pw-in" class="lock-input" type="password" placeholder="Haslo..." autofocus autocomplete="current-password">
+    <button class="lock-btn" onclick="window._checkPw(document.getElementById('pw-in').value)">Wejdz</button>
+    <div id="pw-err" class="lock-error">Nieprawidlowe haslo</div>
   </div>
 </div>
 
+<!-- App -->
 <div id="app">
-  <div class="header">
-    <div class="brand">
-      <span class="brand-icon">▲</span>
-      <span class="brand-name">Market Edge</span>
-      <span class="brand-sep">|</span>
-      <span class="brand-sub">Paper Trader</span>
-    </div>
-    <div class="mode-toggle" style="margin-right:4px">
-      <button class="mode-btn active" id="engine-swing" onclick="setEngine('swing')">Swing</button>
-      <button class="mode-btn" id="engine-intraday" onclick="setEngine('intraday')">Intraday</button>
-    </div>
-    <div class="mode-toggle">
-      <button class="mode-btn active" data-mode="live" onclick="setMode('live')">Live</button>
-      <button class="mode-btn" data-mode="backtest" onclick="setMode('backtest')">Backtest</button>
-    </div>
-    <div class="header-meta">
-      <span class="dot"></span>{updated}
-    </div>
-  </div>
 
-  <div class="nav" id="nav">
-    <button class="nav-tab active" data-tab="overview" onclick="setTab('overview')">Przegląd</button>
-    <button class="nav-tab" data-tab="positions" onclick="setTab('positions')">Pozycje</button>
-    <button class="nav-tab" data-tab="trades" onclick="setTab('trades')">Transakcje</button>
-    <button class="nav-tab" data-tab="strategies" onclick="setTab('strategies')">Strategie</button>
-    <button class="nav-tab" data-tab="analysis" onclick="setTab('analysis')">Analiza</button>
-    <button class="nav-tab" id="tab-signals-btn" data-tab="signals" onclick="setTab('signals')">Sygnały</button>
-  </div>
-
-  <div class="content">
-    <div class="panel" id="p-live-overview">{live_overview}</div>
-    <div class="panel" id="p-live-positions">{live_positions}</div>
-    <div class="panel" id="p-live-trades">{live_trades}</div>
-    <div class="panel" id="p-live-strategies">{live_strategies}</div>
-    <div class="panel" id="p-live-analysis">{live_analysis}</div>
-    <div class="panel" id="p-live-signals">{live_signals}</div>
-
-    <div class="panel" id="p-backtest-overview">{bt_overview}</div>
-    <div class="panel" id="p-backtest-positions">{bt_positions}</div>
-    <div class="panel" id="p-backtest-trades">{bt_trades}</div>
-    <div class="panel" id="p-backtest-strategies">{bt_strategies}</div>
-    <div class="panel" id="p-backtest-analysis">{bt_analysis}</div>
-    <div class="panel" id="p-backtest-signals"><p class="muted p16">Sygnały dostępne tylko w trybie Live.</p></div>
-
-    <div class="disclaimer">
-      ⚠️ Symulacja paper trading — nie porada inwestycyjna. System wirtualny, brak realnych transakcji.
-      Wiarygodność wyników wymaga 100–200+ zamkniętych transakcji.
+  <!-- Header -->
+  <header id="header">
+    <div class="header-left">
+      <div class="logo">
+        <span class="logo-icon">&#x25B2;</span>
+        <span class="logo-text">Market Edge</span>
+        <span class="logo-sub">Paper Trader</span>
+      </div>
+      <div class="engine-tabs">
+        <button class="engine-tab active" id="btn-swing" onclick="setEngine('swing')">Swing</button>
+        <button class="engine-tab" id="btn-intraday" onclick="setEngine('intraday')">Intraday</button>
+      </div>
     </div>
-  </div>
-</div>
+    <div class="header-center">
+      <div class="mode-tabs">
+        <button class="mode-tab active" id="btn-live" data-mode="live" onclick="setMode('live')">Live Paper</button>
+        <button class="mode-tab" id="btn-bt" data-mode="backtest" onclick="setMode('backtest')">Backtest</button>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="update-time"><span class="dot-live"></span>{updated}</div>
+    </div>
+  </header>
+
+  <!-- Body wrap: sidebar + main + right panel -->
+  <div id="body-wrap">
+
+    <!-- Sidebar -->
+    <nav id="sidebar">
+      <a class="nav-item active" data-tab="overview" href="javascript:void(0)">
+        <span class="nav-icon">&#x25A3;</span>Przeglad
+      </a>
+      <a class="nav-item" data-tab="positions" href="javascript:void(0)">
+        <span class="nav-icon">&#x25C8;</span>Pozycje
+      </a>
+      <a class="nav-item" data-tab="trades" href="javascript:void(0)">
+        <span class="nav-icon">&#x2195;</span>Transakcje
+      </a>
+      <a class="nav-item" data-tab="strategies" href="javascript:void(0)">
+        <span class="nav-icon">&#x2B21;</span>Strategie
+      </a>
+      <a class="nav-item" data-tab="analysis" href="javascript:void(0)">
+        <span class="nav-icon">&#x223F;</span>Analiza
+      </a>
+      <a class="nav-item" data-tab="signals" id="sidebar-signals-btn" href="javascript:void(0)">
+        <span class="nav-icon">&#x25CE;</span>Sygnaly
+      </a>
+    </nav>
+
+    <!-- Main content -->
+    <main id="main">
+
+      <!-- Live panels -->
+      <div class="tab-panel active" id="p-live-overview">{live_overview}
+        <div class="disclaimer">
+          &#x26A0; Symulacja paper trading &#x2014; nie porada inwestycyjna. System wirtualny, brak realnych transakcji.
+          Wiarygodnosc wynikow wymaga 100&#x2013;200+ zamknietych transakcji.
+        </div>
+      </div>
+      <div class="tab-panel" id="p-live-positions">{live_positions}</div>
+      <div class="tab-panel" id="p-live-trades">{live_trades}</div>
+      <div class="tab-panel" id="p-live-strategies">{live_strategies}</div>
+      <div class="tab-panel" id="p-live-analysis">{live_analysis}</div>
+      <div class="tab-panel" id="p-live-signals">{live_signals}</div>
+
+      <!-- Backtest panels -->
+      <div class="tab-panel" id="p-backtest-overview">{bt_overview}
+        <div class="disclaimer">
+          &#x26A0; Symulacja paper trading &#x2014; nie porada inwestycyjna. System wirtualny, brak realnych transakcji.
+          Wiarygodnosc wynikow wymaga 100&#x2013;200+ zamknietych transakcji.
+        </div>
+      </div>
+      <div class="tab-panel" id="p-backtest-positions">{bt_positions}</div>
+      <div class="tab-panel" id="p-backtest-trades">{bt_trades}</div>
+      <div class="tab-panel" id="p-backtest-strategies">{bt_strategies}</div>
+      <div class="tab-panel" id="p-backtest-analysis">{bt_analysis}</div>
+      <div class="tab-panel" id="p-backtest-signals"><p class="muted p16">Sygnaly dostepne tylko w trybie Live.</p></div>
+
+    </main>
+
+    <!-- Right panel -->
+    <aside id="right-panel">
+      <div class="panel-section" id="rp-signals-section">
+        <h3 class="panel-title">Sygnaly oczekujace</h3>
+        <div id="rp-signals-live">{live_signals_mini}</div>
+        <div id="rp-signals-bt" style="display:none">{bt_signals_mini}</div>
+      </div>
+      <div class="panel-section">
+        <h3 class="panel-title">Otwarte pozycje</h3>
+        <div id="rp-positions-live">{live_positions_mini}</div>
+        <div id="rp-positions-bt" style="display:none">{bt_positions_mini}</div>
+      </div>
+    </aside>
+
+  </div><!-- /body-wrap -->
+
+</div><!-- /app -->
 
 <!-- Intraday engine overlay -->
-<div id="intraday-overlay" style="display:none;position:fixed;inset:52px 0 0 0;background:var(--bg);z-index:100;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px">
+<div id="intraday-overlay">
   <div style="text-align:center;max-width:440px;padding:40px">
-    <div style="font-size:40px;margin-bottom:16px">📈</div>
+    <div style="font-size:40px;margin-bottom:16px">&#x1F4C8;</div>
     <div style="font-size:20px;font-weight:700;margin-bottom:8px;color:var(--text)">Silnik intraday</div>
-    <div style="font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.6">
-      Dashboard intraday dostępny jako osobna strona.<br>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.6">
+      Dashboard intraday dostepny jako osobna strona.<br>
       Strategie: VWAP Mean Reversion, Opening Range Breakout,<br>
       Momentum Continuation, Relative Strength Pullback.<br>
-      Interwał: 30m · Brak pozycji overnight.
+      Interwal: 30m &middot; Brak pozycji overnight.
     </div>
-    <a href="intraday_dashboard.html" style="display:inline-block;padding:10px 28px;background:var(--accent);color:#fff;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px">
-      Przejdź do dashboardu intraday →
+    <a href="intraday_dashboard.html" style="display:inline-block;padding:10px 28px;background:var(--accent);color:#fff;border-radius:var(--radius-sm);text-decoration:none;font-weight:700;font-size:14px">
+      Przejdz do dashboardu intraday &#x2192;
     </a>
   </div>
 </div>
@@ -1065,52 +1509,52 @@ tr:hover td{{background:var(--surface2)}}
   <div class="modal-box">
     <div class="modal-header">
       <div>
-        <div class="modal-ticker" id="m-ticker">—</div>
-        <div id="m-strategy" style="color:var(--muted);font-size:12px;margin-top:2px"></div>
+        <div class="modal-ticker" id="m-ticker">&#x2014;</div>
+        <div id="m-strategy" style="color:var(--text3);font-size:12px;margin-top:2px"></div>
       </div>
-      <button class="modal-close" onclick="closeModal()">✕</button>
+      <button class="modal-close" onclick="closeModal()">&#x2715;</button>
     </div>
-    <div class="modal-body">
+    <div class="modal-body-inner">
       <div class="modal-section">
         <div class="modal-section-title">Status</div>
         <div class="modal-grid">
-          <div class="modal-field"><div class="modal-field-label">Status</div><div class="modal-field-value" id="m-status">—</div></div>
-          <div class="modal-field"><div class="modal-field-label">Tryb</div><div class="modal-field-value" id="m-mode">—</div></div>
-          <div class="modal-field"><div class="modal-field-label">Score sygnału</div><div class="modal-field-value" id="m-score">—</div></div>
-          <div class="modal-field"><div class="modal-field-label">Dni trzymania</div><div class="modal-field-value" id="m-hold">—</div></div>
+          <div class="modal-field"><div class="modal-field-label">Status</div><div class="modal-field-value" id="m-status">&#x2014;</div></div>
+          <div class="modal-field"><div class="modal-field-label">Tryb</div><div class="modal-field-value" id="m-mode">&#x2014;</div></div>
+          <div class="modal-field"><div class="modal-field-label">Score sygnalu</div><div class="modal-field-value" id="m-score">&#x2014;</div></div>
+          <div class="modal-field"><div class="modal-field-label">Dni trzymania</div><div class="modal-field-value" id="m-hold">&#x2014;</div></div>
         </div>
       </div>
       <div class="modal-section">
-        <div class="modal-section-title">Wejście</div>
+        <div class="modal-section-title">Wejscie</div>
         <div class="modal-grid">
-          <div class="modal-field"><div class="modal-field-label">Data wejścia</div><div class="modal-field-value" id="m-entry-date">—</div></div>
-          <div class="modal-field"><div class="modal-field-label">Cena wejścia</div><div class="modal-field-value" id="m-entry-price">—</div></div>
-          <div class="modal-field"><div class="modal-field-label">Stop Loss</div><div class="modal-field-value neg" id="m-sl">—</div></div>
-          <div class="modal-field"><div class="modal-field-label">Take Profit</div><div class="modal-field-value pos" id="m-tp">—</div></div>
-          <div class="modal-field"><div class="modal-field-label">Akcje</div><div class="modal-field-value" id="m-shares">—</div></div>
-          <div class="modal-field"><div class="modal-field-label">Wartość pozycji</div><div class="modal-field-value" id="m-pos-val">—</div></div>
+          <div class="modal-field"><div class="modal-field-label">Data wejscia</div><div class="modal-field-value" id="m-entry-date">&#x2014;</div></div>
+          <div class="modal-field"><div class="modal-field-label">Cena wejscia</div><div class="modal-field-value" id="m-entry-price">&#x2014;</div></div>
+          <div class="modal-field"><div class="modal-field-label">Stop Loss</div><div class="modal-field-value neg" id="m-sl">&#x2014;</div></div>
+          <div class="modal-field"><div class="modal-field-label">Take Profit</div><div class="modal-field-value pos" id="m-tp">&#x2014;</div></div>
+          <div class="modal-field"><div class="modal-field-label">Akcje</div><div class="modal-field-value" id="m-shares">&#x2014;</div></div>
+          <div class="modal-field"><div class="modal-field-label">Wartosc pozycji</div><div class="modal-field-value" id="m-pos-val">&#x2014;</div></div>
         </div>
       </div>
       <div id="m-exit-section" class="modal-section">
-        <div class="modal-section-title">Wyjście</div>
+        <div class="modal-section-title">Wyjscie</div>
         <div class="modal-grid">
-          <div class="modal-field"><div class="modal-field-label">Data wyjścia</div><div class="modal-field-value" id="m-exit-date">—</div></div>
-          <div class="modal-field"><div class="modal-field-label">Cena wyjścia</div><div class="modal-field-value" id="m-exit-price">—</div></div>
-          <div class="modal-field"><div class="modal-field-label">Powód wyjścia</div><div class="modal-field-value small" id="m-exit-reason">—</div></div>
-          <div class="modal-field"><div class="modal-field-label">Ryzyko</div><div class="modal-field-value" id="m-risk">—</div></div>
+          <div class="modal-field"><div class="modal-field-label">Data wyjscia</div><div class="modal-field-value" id="m-exit-date">&#x2014;</div></div>
+          <div class="modal-field"><div class="modal-field-label">Cena wyjscia</div><div class="modal-field-value" id="m-exit-price">&#x2014;</div></div>
+          <div class="modal-field"><div class="modal-field-label">Powod wyjscia</div><div class="modal-field-value small" id="m-exit-reason">&#x2014;</div></div>
+          <div class="modal-field"><div class="modal-field-label">Ryzyko</div><div class="modal-field-value" id="m-risk">&#x2014;</div></div>
         </div>
       </div>
       <div class="modal-section">
         <div class="modal-section-title">Wynik</div>
         <div class="modal-grid">
-          <div class="modal-field"><div class="modal-field-label">P&amp;L PLN</div><div class="modal-field-value" id="m-pnl">—</div></div>
-          <div class="modal-field"><div class="modal-field-label">P&amp;L %</div><div class="modal-field-value" id="m-pnl-pct">—</div></div>
-          <div class="modal-field"><div class="modal-field-label">R-multiple</div><div class="modal-field-value" id="m-r">—</div></div>
-          <div class="modal-field"><div class="modal-field-label">Max hold dni</div><div class="modal-field-value" id="m-max-hold">—</div></div>
+          <div class="modal-field"><div class="modal-field-label">P&amp;L PLN</div><div class="modal-field-value" id="m-pnl">&#x2014;</div></div>
+          <div class="modal-field"><div class="modal-field-label">P&amp;L %</div><div class="modal-field-value" id="m-pnl-pct">&#x2014;</div></div>
+          <div class="modal-field"><div class="modal-field-label">R-multiple</div><div class="modal-field-value" id="m-r">&#x2014;</div></div>
+          <div class="modal-field"><div class="modal-field-label">Max hold dni</div><div class="modal-field-value" id="m-max-hold">&#x2014;</div></div>
         </div>
       </div>
       <div id="m-reason-section" class="modal-section" style="display:none">
-        <div class="modal-section-title">Uzasadnienie sygnału</div>
+        <div class="modal-section-title">Uzasadnienie sygnalu</div>
         <div class="modal-reason" id="m-reason"></div>
       </div>
     </div>
@@ -1121,9 +1565,9 @@ tr:hover td{{background:var(--surface2)}}
 {build_trades_js(live, bt)}
 
 (function(){{
-  var HASH="{pw_hash}",KEY="mept_v2";
+  var HASH="{pw_hash}",KEY="mept_v3";
   function unlock(){{
-    document.getElementById("lock").style.display="none";
+    document.getElementById("lock-screen").style.display="none";
     var app=document.getElementById("app");
     app.style.display="flex";
     setTimeout(function(){{window.dispatchEvent(new Event("resize"))}},120);
@@ -1143,12 +1587,23 @@ tr:hover td{{background:var(--surface2)}}
 
 var MODE="live", TAB="overview", ENGINE="swing";
 
+// Sidebar navigation
+document.addEventListener("DOMContentLoaded", function(){{
+  document.querySelectorAll('.nav-item[data-tab]').forEach(function(el){{
+    el.addEventListener('click', function(){{
+      var tab = el.dataset.tab;
+      document.querySelectorAll('.nav-item').forEach(function(x){{ x.classList.remove('active'); }});
+      el.classList.add('active');
+      setTabDirect(tab);
+    }});
+  }});
+}});
+
 function setEngine(e){{
   ENGINE=e;
-  document.getElementById("engine-swing").classList.toggle("active",e==="swing");
-  document.getElementById("engine-intraday").classList.toggle("active",e==="intraday");
+  document.getElementById("btn-swing").classList.toggle("active",e==="swing");
+  document.getElementById("btn-intraday").classList.toggle("active",e==="intraday");
   var overlay=document.getElementById("intraday-overlay");
-  var appContent=document.getElementById("app");
   if(e==="intraday"){{
     overlay.style.display="flex";
   }}else{{
@@ -1158,23 +1613,34 @@ function setEngine(e){{
 
 function setMode(m){{
   MODE=m;
-  document.querySelectorAll(".mode-btn").forEach(function(b){{b.classList.toggle("active",b.dataset.mode===m)}});
-  var sigBtn=document.getElementById("tab-signals-btn");
+  document.querySelectorAll(".mode-tab").forEach(function(b){{b.classList.toggle("active",b.dataset.mode===m)}});
+  // update right panel
+  document.getElementById("rp-signals-live").style.display=(m==="live")?"":"none";
+  document.getElementById("rp-signals-bt").style.display=(m==="backtest")?"":"none";
+  document.getElementById("rp-positions-live").style.display=(m==="live")?"":"none";
+  document.getElementById("rp-positions-bt").style.display=(m==="backtest")?"":"none";
+  // hide signals nav item in backtest
+  var sigBtn=document.getElementById("sidebar-signals-btn");
   if(sigBtn) sigBtn.style.display=(m==="live")?"":"none";
-  if(m==="backtest" && TAB==="signals") setTab("overview");
-  else updatePanels();
+  if(m==="backtest" && TAB==="signals") {{
+    setTabDirect("overview");
+    document.querySelectorAll('.nav-item').forEach(function(x){{ x.classList.remove('active'); }});
+    var overviewItem=document.querySelector('.nav-item[data-tab="overview"]');
+    if(overviewItem) overviewItem.classList.add('active');
+  }} else {{
+    updatePanels();
+  }}
 }}
 
-function setTab(t){{
+function setTabDirect(t){{
   TAB=t;
-  document.querySelectorAll(".nav-tab").forEach(function(b){{b.classList.toggle("active",b.dataset.tab===t)}});
   updatePanels();
 }}
 
 function updatePanels(){{
-  document.querySelectorAll(".panel").forEach(function(p){{
+  document.querySelectorAll(".tab-panel").forEach(function(p){{
     var id="p-"+MODE+"-"+TAB;
-    p.classList.toggle("visible",p.id===id);
+    p.classList.toggle("active",p.id===id);
   }});
   setTimeout(function(){{window.dispatchEvent(new Event("resize"))}},80);
 }}
@@ -1190,7 +1656,7 @@ function _sign(v,unit){{
   var n=parseFloat(v);
   return(n>=0?"+":"")+_fmt(n,unit==="pct"?2:0)+(unit==="pct"?"%":" PLN");
 }}
-function _cls(el,v){{
+function _clsEl(el,v){{
   var n=parseFloat(v);
   el.className="modal-field-value"+(n>0?" pos":n<0?" neg":"");
 }}
@@ -1225,13 +1691,13 @@ function showTrade(id){{
   // P&L
   var pnlEl=document.getElementById("m-pnl");
   pnlEl.textContent=_sign(t.pnl_pln,"pln");
-  _cls(pnlEl,t.pnl_pln);
+  _clsEl(pnlEl,t.pnl_pln);
   var pnlPctEl=document.getElementById("m-pnl-pct");
   pnlPctEl.textContent=t.pnl_pct?_sign(t.pnl_pct,"pct"):"—";
-  _cls(pnlPctEl,t.pnl_pct);
+  _clsEl(pnlPctEl,t.pnl_pct);
   var rEl=document.getElementById("m-r");
   rEl.textContent=t.r_multiple?(parseFloat(t.r_multiple)>=0?"+":"")+parseFloat(t.r_multiple).toFixed(2)+"R":"—";
-  _cls(rEl,t.r_multiple);
+  _clsEl(rEl,t.r_multiple);
   // reason
   var rSec=document.getElementById("m-reason-section");
   if(t.entry_reason){{
@@ -1251,7 +1717,7 @@ document.addEventListener("keydown",function(e){{if(e.key==="Escape")closeModal(
 
 window.addEventListener("DOMContentLoaded",function(){{
   setMode("live");
-  setTab("overview");
+  updatePanels();
 }});
 </script>
 </body>
@@ -1285,7 +1751,7 @@ def main():
     with open(out_path, "w", encoding="utf-8") as f:
         f.write(html)
     open(os.path.join(DOCS_DIR, ".nojekyll"), "w").close()
-    print(f"Dashboard written → {out_path}  ({len(html):,} bytes)")
+    print(f"Dashboard written -> {out_path}  ({len(html):,} bytes)")
 
 
 if __name__ == "__main__":
