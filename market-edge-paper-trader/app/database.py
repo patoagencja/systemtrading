@@ -131,6 +131,119 @@ def init_db():
             cur.execute("ALTER TABLE strategy_stats ADD COLUMN run_mode TEXT DEFAULT 'backtest'")
         except Exception:
             pass
+        # ── Intraday tables ──────────────────────────────────────────────────
+        cur.executescript("""
+        CREATE TABLE IF NOT EXISTS intraday_signals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            run_id INTEGER,
+            ticker TEXT NOT NULL,
+            strategy TEXT NOT NULL,
+            sector TEXT,
+            session_date TEXT,
+            signal_timestamp TEXT,
+            signal_bar_close REAL,
+            score REAL,
+            planned_entry REAL,
+            stop_price REAL,
+            target_price REAL,
+            reward_risk REAL,
+            market_regime TEXT DEFAULT 'NEUTRAL',
+            status TEXT DEFAULT 'PENDING',
+            rejection_reason TEXT,
+            run_mode TEXT DEFAULT 'live',
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_intraday_signal_key
+            ON intraday_signals(run_mode, session_date, signal_timestamp, ticker, strategy);
+
+        CREATE TABLE IF NOT EXISTS intraday_orders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            signal_id INTEGER REFERENCES intraday_signals(id),
+            status TEXT DEFAULT 'PENDING',
+            planned_execution_timestamp TEXT,
+            actual_execution_timestamp TEXT,
+            planned_price REAL,
+            fill_price REAL,
+            slippage_bps REAL,
+            spread_bps REAL,
+            cancellation_reason TEXT,
+            run_mode TEXT DEFAULT 'live',
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS intraday_trades (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            signal_id INTEGER REFERENCES intraday_signals(id),
+            ticker TEXT NOT NULL,
+            strategy TEXT NOT NULL,
+            sector TEXT,
+            session_date TEXT,
+            entry_timestamp TEXT,
+            entry_price REAL,
+            exit_timestamp TEXT,
+            exit_price REAL,
+            stop_price REAL,
+            target_price REAL,
+            shares INTEGER,
+            position_value_pln REAL,
+            planned_risk_pln REAL,
+            gross_pnl_pln REAL,
+            commission_pln REAL,
+            spread_cost_pln REAL,
+            slippage_cost_pln REAL,
+            net_pnl_pln REAL,
+            pnl_pct REAL,
+            r_multiple REAL,
+            holding_minutes REAL,
+            exit_reason TEXT,
+            market_regime TEXT,
+            run_mode TEXT DEFAULT 'live',
+            status TEXT DEFAULT 'open',
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_intraday_trade_key
+            ON intraday_trades(run_mode, session_date, ticker, entry_timestamp)
+            WHERE status='open';
+
+        CREATE TABLE IF NOT EXISTS intraday_snapshots (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT NOT NULL,
+            session_date TEXT,
+            run_mode TEXT DEFAULT 'live',
+            equity_pln REAL,
+            cash_pln REAL,
+            invested_pln REAL,
+            realized_pnl_today REAL,
+            unrealized_pnl REAL,
+            total_open_risk REAL,
+            total_exposure REAL,
+            open_positions INTEGER,
+            daily_drawdown REAL,
+            daily_turnover REAL,
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS intraday_runs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            run_id TEXT UNIQUE,
+            session_date TEXT,
+            bar_timestamp TEXT,
+            started_at TEXT,
+            completed_at TEXT,
+            status TEXT DEFAULT 'running',
+            run_mode TEXT DEFAULT 'live',
+            scanned_instruments INTEGER DEFAULT 0,
+            signals_generated INTEGER DEFAULT 0,
+            orders_created INTEGER DEFAULT 0,
+            positions_opened INTEGER DEFAULT 0,
+            positions_closed INTEGER DEFAULT 0,
+            warnings TEXT,
+            errors TEXT,
+            error_message TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+        """)
     print("Database initialized.")
 
 
