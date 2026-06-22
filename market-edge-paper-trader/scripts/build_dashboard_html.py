@@ -170,6 +170,18 @@ def render_tab(d: dict, k: dict, mode: str) -> str:
         ("pnl_pln", _colored_money), ("pnl_pct", _colored_pct)
     ]) for r in d["worst"]) or "<tr><td colspan=4>—</td></tr>"
 
+    # Closed profitable trades table
+    profitable = [r for r in d["all_trades"] if r["status"] == "closed" and r["pnl_pln"] and r["pnl_pln"] > 0]
+    profitable.sort(key=lambda r: r["pnl_pln"] or 0, reverse=True)
+    profit_rows = "\n".join(
+        f"<tr><td><b>{_txt(r['ticker'])}</b></td><td>{_txt(r['strategy'])}</td>"
+        f"<td>{_txt(r['entry_date'])}</td><td>{_txt(r['exit_date'])}</td>"
+        f"<td>{_colored_money(r['pnl_pln'])}</td><td>{_colored_pct(r['pnl_pct'])}</td>"
+        f"<td>{_rnum(r['r_multiple']) if r['r_multiple'] is not None else '-'}</td>"
+        f"<td>{_txt(r['exit_reason'])}</td></tr>"
+        for r in profitable
+    ) or "<tr><td colspan=8 style='color:#94a3b8;padding:16px'>Brak zamkniętych zyskownych transakcji — czekamy na pierwsze zamknięcia.</td></tr>"
+
     # All trades table (open + closed)
     all_rows = []
     for r in d["all_trades"]:
@@ -230,6 +242,14 @@ def render_tab(d: dict, k: dict, mode: str) -> str:
       <div class="card"><h2>📉 Top 5 straty</h2>
         <table><thead><tr><th>Ticker</th><th>Strategia</th><th>P&amp;L</th><th>%</th></tr></thead>
         <tbody>{worst_rows}</tbody></table></div>
+    </div>
+
+    <div class="card">
+      <h2>✅ Zamknięte na plus</h2>
+      <div style="overflow-x:auto">
+      <table><thead><tr><th>Ticker</th><th>Strategia</th><th>Wejście</th><th>Wyjście</th><th>P&amp;L</th><th>%</th><th>R</th><th>Powód</th></tr></thead>
+      <tbody>{profit_rows}</tbody></table>
+      </div>
     </div>
 
     <div class="card">
