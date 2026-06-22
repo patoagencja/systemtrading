@@ -64,12 +64,20 @@ def run_backtest(start_date: date = None, months: int = 12):
 
     print(f"  Loading historical data for {len(watchlist)} tickers...")
 
-    # Fetch all data upfront (2 years to have enough history before backtest window)
+    # Need 1 year of warmup before backtest start for indicator calculation
+    from dateutil.relativedelta import relativedelta as _rd
+    data_start = (start_date - _rd(years=1)).strftime("%Y-%m-%d")
+    data_end = (end_date + timedelta(days=1)).strftime("%Y-%m-%d")
+    needs_range = start_date < (date.today() - timedelta(days=700))
+
     all_data: dict[str, pd.DataFrame] = {}
     for item in watchlist:
         ticker = item["ticker"]
-        df = fetch_ohlcv(ticker, period="2y")
-        if df.empty or len(df) < MIN_HISTORY_BARS:
+        if needs_range:
+            df = fetch_ohlcv_range(ticker, start=data_start, end=data_end)
+        else:
+            df = fetch_ohlcv(ticker, period="2y")
+        if df is None or df.empty or len(df) < MIN_HISTORY_BARS:
             continue
         df = compute_indicators(df)
         all_data[ticker] = df
