@@ -175,8 +175,9 @@ def _update_open_positions(
 
         latest = df.iloc[-1]
         current_close = float(latest["close"])
-        current_high = float(latest["high"])
-        current_low = float(latest["low"])
+        current_open  = float(latest["open"])
+        current_high  = float(latest["high"])
+        current_low   = float(latest["low"])
         current_sma50 = latest.get("sma50")
 
         entry_date = date.fromisoformat(trade["entry_date"])
@@ -191,13 +192,25 @@ def _update_open_positions(
         exit_price = None
         exit_reason = None
 
-        # Conservative: if both SL and TP hit, assume SL hit first
         sl_hit = current_low <= stop_loss
         tp_hit = current_high >= take_profit
 
-        if sl_hit and tp_hit:
-            exit_price = stop_loss
+        if current_open <= stop_loss:
+            # Gapped down past SL at open — fill at open (worse than SL)
+            exit_price = current_open
             exit_reason = "stop_loss"
+        elif current_open >= take_profit:
+            # Gapped up past TP at open — fill at open (better than TP)
+            exit_price = current_open
+            exit_reason = "take_profit"
+        elif sl_hit and tp_hit:
+            # Both hit intraday — open proximity tells us which came first
+            if abs(current_open - stop_loss) <= abs(current_open - take_profit):
+                exit_price = stop_loss
+                exit_reason = "stop_loss"
+            else:
+                exit_price = take_profit
+                exit_reason = "take_profit"
         elif sl_hit:
             exit_price = stop_loss
             exit_reason = "stop_loss"
