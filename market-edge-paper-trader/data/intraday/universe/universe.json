@@ -1,0 +1,1526 @@
+[
+  {
+    "ticker": "AAPL",
+    "sector": "Technology",
+    "name": "AAPL",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "MSFT",
+    "sector": "Technology",
+    "name": "MSFT",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "NVDA",
+    "sector": "Technology",
+    "name": "NVDA",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "GOOGL",
+    "sector": "Technology",
+    "name": "GOOGL",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "GOOG",
+    "sector": "Technology",
+    "name": "GOOG",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "META",
+    "sector": "Technology",
+    "name": "META",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "AMZN",
+    "sector": "Consumer Discretionary",
+    "name": "AMZN",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "TSLA",
+    "sector": "Consumer Discretionary",
+    "name": "TSLA",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "AVGO",
+    "sector": "Technology",
+    "name": "AVGO",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "ORCL",
+    "sector": "Technology",
+    "name": "ORCL",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "AMD",
+    "sector": "Technology",
+    "name": "AMD",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "ADBE",
+    "sector": "Technology",
+    "name": "ADBE",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "CSCO",
+    "sector": "Technology",
+    "name": "CSCO",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "INTC",
+    "sector": "Technology",
+    "name": "INTC",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "QCOM",
+    "sector": "Technology",
+    "name": "QCOM",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "TXN",
+    "sector": "Technology",
+    "name": "TXN",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "MU",
+    "sector": "Technology",
+    "name": "MU",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "AMAT",
+    "sector": "Technology",
+    "name": "AMAT",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "LRCX",
+    "sector": "Technology",
+    "name": "LRCX",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "KLAC",
+    "sector": "Technology",
+    "name": "KLAC",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "MRVL",
+    "sector": "Technology",
+    "name": "MRVL",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "ASML",
+    "sector": "Technology",
+    "name": "ASML",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "TSM",
+    "sector": "Technology",
+    "name": "TSM",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "SNPS",
+    "sector": "Technology",
+    "name": "SNPS",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "CDNS",
+    "sector": "Technology",
+    "name": "CDNS",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "ANSS",
+    "sector": "Unknown",
+    "name": "ANSS",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "FTNT",
+    "sector": "Unknown",
+    "name": "FTNT",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "PANW",
+    "sector": "Technology",
+    "name": "PANW",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "CRWD",
+    "sector": "Technology",
+    "name": "CRWD",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "NET",
+    "sector": "Technology",
+    "name": "NET",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "DDOG",
+    "sector": "Technology",
+    "name": "DDOG",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "SNOW",
+    "sector": "Technology",
+    "name": "SNOW",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "PLTR",
+    "sector": "Technology",
+    "name": "PLTR",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "UBER",
+    "sector": "Technology",
+    "name": "UBER",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "LYFT",
+    "sector": "Unknown",
+    "name": "LYFT",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "ABNB",
+    "sector": "Unknown",
+    "name": "ABNB",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "DASH",
+    "sector": "Unknown",
+    "name": "DASH",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "ZM",
+    "sector": "Unknown",
+    "name": "ZM",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "SHOP",
+    "sector": "Technology",
+    "name": "SHOP",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "SQ",
+    "sector": "Technology",
+    "name": "SQ",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "JPM",
+    "sector": "Financials",
+    "name": "JPM",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "BAC",
+    "sector": "Financials",
+    "name": "BAC",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "WFC",
+    "sector": "Financials",
+    "name": "WFC",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "GS",
+    "sector": "Financials",
+    "name": "GS",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "MS",
+    "sector": "Financials",
+    "name": "MS",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "C",
+    "sector": "Financials",
+    "name": "C",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "AXP",
+    "sector": "Financials",
+    "name": "AXP",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "BLK",
+    "sector": "Financials",
+    "name": "BLK",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "SCHW",
+    "sector": "Financials",
+    "name": "SCHW",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "USB",
+    "sector": "Unknown",
+    "name": "USB",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "PNC",
+    "sector": "Unknown",
+    "name": "PNC",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "V",
+    "sector": "Financials",
+    "name": "V",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "MA",
+    "sector": "Financials",
+    "name": "MA",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "PYPL",
+    "sector": "Financials",
+    "name": "PYPL",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "COF",
+    "sector": "Financials",
+    "name": "COF",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "DFS",
+    "sector": "Financials",
+    "name": "DFS",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "SYF",
+    "sector": "Unknown",
+    "name": "SYF",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "ALLY",
+    "sector": "Unknown",
+    "name": "ALLY",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "SOFI",
+    "sector": "Unknown",
+    "name": "SOFI",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "UNH",
+    "sector": "Health Care",
+    "name": "UNH",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "LLY",
+    "sector": "Health Care",
+    "name": "LLY",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "JNJ",
+    "sector": "Health Care",
+    "name": "JNJ",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "ABBV",
+    "sector": "Health Care",
+    "name": "ABBV",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "MRK",
+    "sector": "Health Care",
+    "name": "MRK",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "PFE",
+    "sector": "Health Care",
+    "name": "PFE",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "TMO",
+    "sector": "Health Care",
+    "name": "TMO",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "ABT",
+    "sector": "Health Care",
+    "name": "ABT",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "MDT",
+    "sector": "Health Care",
+    "name": "MDT",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "ISRG",
+    "sector": "Health Care",
+    "name": "ISRG",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "AMGN",
+    "sector": "Health Care",
+    "name": "AMGN",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "GILD",
+    "sector": "Health Care",
+    "name": "GILD",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "BIIB",
+    "sector": "Unknown",
+    "name": "BIIB",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "VRTX",
+    "sector": "Health Care",
+    "name": "VRTX",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "REGN",
+    "sector": "Health Care",
+    "name": "REGN",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "MRNA",
+    "sector": "Health Care",
+    "name": "MRNA",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "BMY",
+    "sector": "Health Care",
+    "name": "BMY",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "CVS",
+    "sector": "Health Care",
+    "name": "CVS",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "CI",
+    "sector": "Health Care",
+    "name": "CI",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "HUM",
+    "sector": "Health Care",
+    "name": "HUM",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "HD",
+    "sector": "Consumer Discretionary",
+    "name": "HD",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "MCD",
+    "sector": "Consumer Discretionary",
+    "name": "MCD",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "NKE",
+    "sector": "Consumer Discretionary",
+    "name": "NKE",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "SBUX",
+    "sector": "Consumer Discretionary",
+    "name": "SBUX",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "TGT",
+    "sector": "Consumer Discretionary",
+    "name": "TGT",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "WMT",
+    "sector": "Consumer Staples",
+    "name": "WMT",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "COST",
+    "sector": "Consumer Staples",
+    "name": "COST",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "LOW",
+    "sector": "Consumer Discretionary",
+    "name": "LOW",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "TJX",
+    "sector": "Consumer Discretionary",
+    "name": "TJX",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "BKNG",
+    "sector": "Consumer Discretionary",
+    "name": "BKNG",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "EXPE",
+    "sector": "Consumer Discretionary",
+    "name": "EXPE",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "MAR",
+    "sector": "Consumer Discretionary",
+    "name": "MAR",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "HLT",
+    "sector": "Consumer Discretionary",
+    "name": "HLT",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "MGM",
+    "sector": "Unknown",
+    "name": "MGM",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "WYNN",
+    "sector": "Unknown",
+    "name": "WYNN",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "LVS",
+    "sector": "Unknown",
+    "name": "LVS",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "BA",
+    "sector": "Industrials",
+    "name": "BA",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "CAT",
+    "sector": "Industrials",
+    "name": "CAT",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "DE",
+    "sector": "Industrials",
+    "name": "DE",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "GE",
+    "sector": "Industrials",
+    "name": "GE",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "HON",
+    "sector": "Industrials",
+    "name": "HON",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "LMT",
+    "sector": "Industrials",
+    "name": "LMT",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "RTX",
+    "sector": "Industrials",
+    "name": "RTX",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "NOC",
+    "sector": "Industrials",
+    "name": "NOC",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "GD",
+    "sector": "Industrials",
+    "name": "GD",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "UPS",
+    "sector": "Industrials",
+    "name": "UPS",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "FDX",
+    "sector": "Industrials",
+    "name": "FDX",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "XOM",
+    "sector": "Energy",
+    "name": "XOM",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "CVX",
+    "sector": "Energy",
+    "name": "CVX",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "COP",
+    "sector": "Energy",
+    "name": "COP",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "SLB",
+    "sector": "Energy",
+    "name": "SLB",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "HAL",
+    "sector": "Energy",
+    "name": "HAL",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "MPC",
+    "sector": "Energy",
+    "name": "MPC",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "VLO",
+    "sector": "Energy",
+    "name": "VLO",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "PSX",
+    "sector": "Energy",
+    "name": "PSX",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "NFLX",
+    "sector": "Communication Services",
+    "name": "NFLX",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "DIS",
+    "sector": "Communication Services",
+    "name": "DIS",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "CMCSA",
+    "sector": "Communication Services",
+    "name": "CMCSA",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "WBD",
+    "sector": "Communication Services",
+    "name": "WBD",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "T",
+    "sector": "Communication Services",
+    "name": "T",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "VZ",
+    "sector": "Communication Services",
+    "name": "VZ",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "TMUS",
+    "sector": "Communication Services",
+    "name": "TMUS",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "AMT",
+    "sector": "Real Estate",
+    "name": "AMT",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "PLD",
+    "sector": "Real Estate",
+    "name": "PLD",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "CCI",
+    "sector": "Real Estate",
+    "name": "CCI",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "EQIX",
+    "sector": "Real Estate",
+    "name": "EQIX",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "SPG",
+    "sector": "Real Estate",
+    "name": "SPG",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "SPY",
+    "sector": "ETF",
+    "name": "SPY",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "QQQ",
+    "sector": "ETF",
+    "name": "QQQ",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "IWM",
+    "sector": "ETF",
+    "name": "IWM",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "DIA",
+    "sector": "ETF",
+    "name": "DIA",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "GLD",
+    "sector": "ETF",
+    "name": "GLD",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "SLV",
+    "sector": "ETF",
+    "name": "SLV",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "TLT",
+    "sector": "ETF",
+    "name": "TLT",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "HYG",
+    "sector": "ETF",
+    "name": "HYG",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "LQD",
+    "sector": "ETF",
+    "name": "LQD",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "EEM",
+    "sector": "ETF",
+    "name": "EEM",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "XLK",
+    "sector": "ETF",
+    "name": "XLK",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "XLF",
+    "sector": "ETF",
+    "name": "XLF",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "XLE",
+    "sector": "ETF",
+    "name": "XLE",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "XLV",
+    "sector": "ETF",
+    "name": "XLV",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "XLI",
+    "sector": "ETF",
+    "name": "XLI",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "XLC",
+    "sector": "ETF",
+    "name": "XLC",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "XLY",
+    "sector": "ETF",
+    "name": "XLY",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "XLP",
+    "sector": "ETF",
+    "name": "XLP",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "XLU",
+    "sector": "ETF",
+    "name": "XLU",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "XLRE",
+    "sector": "ETF",
+    "name": "XLRE",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "XLB",
+    "sector": "ETF",
+    "name": "XLB",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "SMH",
+    "sector": "ETF",
+    "name": "SMH",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "SOXX",
+    "sector": "ETF",
+    "name": "SOXX",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "IBB",
+    "sector": "ETF",
+    "name": "IBB",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "XBI",
+    "sector": "ETF",
+    "name": "XBI",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "ARKK",
+    "sector": "ETF",
+    "name": "ARKK",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "ARKG",
+    "sector": "ETF",
+    "name": "ARKG",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "ARKW",
+    "sector": "ETF",
+    "name": "ARKW",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "VXX",
+    "sector": "ETF",
+    "name": "VXX",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "UVXY",
+    "sector": "ETF",
+    "name": "UVXY",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "SQQQ",
+    "sector": "ETF",
+    "name": "SQQQ",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "TQQQ",
+    "sector": "ETF",
+    "name": "TQQQ",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "SPXU",
+    "sector": "ETF",
+    "name": "SPXU",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "SPXL",
+    "sector": "ETF",
+    "name": "SPXL",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "GDX",
+    "sector": "ETF",
+    "name": "GDX",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "GDXJ",
+    "sector": "ETF",
+    "name": "GDXJ",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "USO",
+    "sector": "ETF",
+    "name": "USO",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "UNG",
+    "sector": "ETF",
+    "name": "UNG",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "IAU",
+    "sector": "ETF",
+    "name": "IAU",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "EWJ",
+    "sector": "ETF",
+    "name": "EWJ",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "EWZ",
+    "sector": "ETF",
+    "name": "EWZ",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "FXI",
+    "sector": "ETF",
+    "name": "FXI",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "EWY",
+    "sector": "ETF",
+    "name": "EWY",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "EWT",
+    "sector": "ETF",
+    "name": "EWT",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "IBIT",
+    "sector": "ETF",
+    "name": "IBIT",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "FBTC",
+    "sector": "ETF",
+    "name": "FBTC",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "CRM",
+    "sector": "Unknown",
+    "name": "CRM",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "NOW",
+    "sector": "Unknown",
+    "name": "NOW",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "INTU",
+    "sector": "Unknown",
+    "name": "INTU",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "ADP",
+    "sector": "Unknown",
+    "name": "ADP",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "PAYX",
+    "sector": "Unknown",
+    "name": "PAYX",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "WDAY",
+    "sector": "Unknown",
+    "name": "WDAY",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "ZS",
+    "sector": "Unknown",
+    "name": "ZS",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "OKTA",
+    "sector": "Unknown",
+    "name": "OKTA",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "MDB",
+    "sector": "Unknown",
+    "name": "MDB",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "GTLB",
+    "sector": "Unknown",
+    "name": "GTLB",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "ARM",
+    "sector": "Unknown",
+    "name": "ARM",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "SMCI",
+    "sector": "Unknown",
+    "name": "SMCI",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "DELL",
+    "sector": "Unknown",
+    "name": "DELL",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "HPE",
+    "sector": "Unknown",
+    "name": "HPE",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "WDC",
+    "sector": "Unknown",
+    "name": "WDC",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "STX",
+    "sector": "Unknown",
+    "name": "STX",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "KEYS",
+    "sector": "Unknown",
+    "name": "KEYS",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "TRMB",
+    "sector": "Unknown",
+    "name": "TRMB",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "NXPI",
+    "sector": "Unknown",
+    "name": "NXPI",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "ON",
+    "sector": "Unknown",
+    "name": "ON",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "STM",
+    "sector": "Unknown",
+    "name": "STM",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "WOLF",
+    "sector": "Unknown",
+    "name": "WOLF",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "MPWR",
+    "sector": "Unknown",
+    "name": "MPWR",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "ENPH",
+    "sector": "Unknown",
+    "name": "ENPH",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "FSLR",
+    "sector": "Unknown",
+    "name": "FSLR",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "SEDG",
+    "sector": "Unknown",
+    "name": "SEDG",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "COIN",
+    "sector": "Unknown",
+    "name": "COIN",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "MSTR",
+    "sector": "Unknown",
+    "name": "MSTR",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "HOOD",
+    "sector": "Unknown",
+    "name": "HOOD",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "IBKR",
+    "sector": "Unknown",
+    "name": "IBKR",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "ETSY",
+    "sector": "Unknown",
+    "name": "ETSY",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "EBAY",
+    "sector": "Unknown",
+    "name": "EBAY",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "PINS",
+    "sector": "Unknown",
+    "name": "PINS",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "SNAP",
+    "sector": "Unknown",
+    "name": "SNAP",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "ROKU",
+    "sector": "Unknown",
+    "name": "ROKU",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "RIVN",
+    "sector": "Unknown",
+    "name": "RIVN",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "LCID",
+    "sector": "Unknown",
+    "name": "LCID",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "NIO",
+    "sector": "Unknown",
+    "name": "NIO",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "LI",
+    "sector": "Unknown",
+    "name": "LI",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "XPEV",
+    "sector": "Unknown",
+    "name": "XPEV",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "F",
+    "sector": "Unknown",
+    "name": "F",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "GM",
+    "sector": "Unknown",
+    "name": "GM",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "TM",
+    "sector": "Unknown",
+    "name": "TM",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "STLA",
+    "sector": "Unknown",
+    "name": "STLA",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "AXON",
+    "sector": "Unknown",
+    "name": "AXON",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "TMDX",
+    "sector": "Unknown",
+    "name": "TMDX",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "MEDP",
+    "sector": "Unknown",
+    "name": "MEDP",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "PODD",
+    "sector": "Unknown",
+    "name": "PODD",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "DXCM",
+    "sector": "Unknown",
+    "name": "DXCM",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "ALGN",
+    "sector": "Unknown",
+    "name": "ALGN",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "MO",
+    "sector": "Consumer Staples",
+    "name": "MO",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "PM",
+    "sector": "Consumer Staples",
+    "name": "PM",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "BTI",
+    "sector": "Unknown",
+    "name": "BTI",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "KO",
+    "sector": "Consumer Staples",
+    "name": "KO",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "PEP",
+    "sector": "Consumer Staples",
+    "name": "PEP",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "MDLZ",
+    "sector": "Unknown",
+    "name": "MDLZ",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "GIS",
+    "sector": "Unknown",
+    "name": "GIS",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "CPB",
+    "sector": "Unknown",
+    "name": "CPB",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "SJM",
+    "sector": "Unknown",
+    "name": "SJM",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "PG",
+    "sector": "Consumer Staples",
+    "name": "PG",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "CL",
+    "sector": "Unknown",
+    "name": "CL",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "EL",
+    "sector": "Unknown",
+    "name": "EL",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "ULTA",
+    "sector": "Unknown",
+    "name": "ULTA",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "BX",
+    "sector": "Financials",
+    "name": "BX",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "KKR",
+    "sector": "Financials",
+    "name": "KKR",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "APO",
+    "sector": "Unknown",
+    "name": "APO",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "ARES",
+    "sector": "Unknown",
+    "name": "ARES",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "OWL",
+    "sector": "Unknown",
+    "name": "OWL",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "TSCO",
+    "sector": "Unknown",
+    "name": "TSCO",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "ORLY",
+    "sector": "Unknown",
+    "name": "ORLY",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "AZO",
+    "sector": "Unknown",
+    "name": "AZO",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "DHI",
+    "sector": "Unknown",
+    "name": "DHI",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "LEN",
+    "sector": "Unknown",
+    "name": "LEN",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "PHM",
+    "sector": "Unknown",
+    "name": "PHM",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "TOL",
+    "sector": "Unknown",
+    "name": "TOL",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "NVR",
+    "sector": "Unknown",
+    "name": "NVR",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "CBRE",
+    "sector": "Unknown",
+    "name": "CBRE",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "JLL",
+    "sector": "Unknown",
+    "name": "JLL",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "UL",
+    "sector": "Unknown",
+    "name": "UL",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "NVO",
+    "sector": "Unknown",
+    "name": "NVO",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "SAP",
+    "sector": "Unknown",
+    "name": "SAP",
+    "added_date": "2026-06-22"
+  },
+  {
+    "ticker": "SONY",
+    "sector": "Unknown",
+    "name": "SONY",
+    "added_date": "2026-06-22"
+  }
+]
