@@ -1,0 +1,78 @@
+name: Intraday Backtest
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: "Start date (YYYY-MM-DD)"
+        required: false
+        default: "2025-01-01"
+      end_date:
+        description: "End date (YYYY-MM-DD, default: today)"
+        required: false
+        default: ""
+      cost_scenario:
+        description: "Cost scenario"
+        type: choice
+        options: [BASE, LOW, STRESS]
+        default: BASE
+      min_score:
+        description: "Minimum signal score (default: 75)"
+        required: false
+        default: "75"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: intraday-paper-trader
+  cancel-in-progress: false
+
+jobs:
+  intraday-backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: market-edge-paper-trader
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Init database and universe
+        run: |
+          python scripts/init_db.py
+          python scripts/build_intraday_universe.py
+      - name: Reset previous intraday backtest data
+        run: python scripts/reset_intraday_paper.py --force --mode backtest
+      - name: Run intraday backtest
+        run: |
+          END_ARG=""
+          if [ -n "${{ github.event.inputs.end_date }}" ]; then
+            END_ARG="--end ${{ github.event.inputs.end_date }}"
+          fi
+          python scripts/run_intraday_backtest.py \
+            --start "${{ github.event.inputs.start_date }}" \
+            $END_ARG \
+            --cost-scenario "${{ github.event.inputs.cost_scenario }}" \
+            --min-score "${{ github.event.inputs.min_score }}"
+      - name: Generate dashboard
+        env:
+          DASHBOARD_PASSWORD: "trading2025"
+        run: python scripts/generate_intraday_dashboard.py
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: intraday-backtest-reports
+          path: market-edge-paper-trader/reports/intraday/
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/database.sqlite data/intraday/ ../docs reports/intraday/
+          git diff --staged --quiet && echo "No changes" || \
+            git commit -m "Intraday backtest: ${{ github.event.inputs.start_date }} [skip ci]"
+          git push

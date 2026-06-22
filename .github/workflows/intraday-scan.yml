@@ -1,0 +1,48 @@
+name: Intraday Paper Trading — 30m Scan
+
+# Runs every 30 minutes during extended market hours (13:00-21:30 UTC weekdays).
+# Code itself checks NYSE calendar and ignores non-trading times.
+
+on:
+  schedule:
+    - cron: "0,30 13,14,15,16,17,18,19,20 * * 1-5"
+    - cron: "0,30 21 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: intraday-paper-trader
+  cancel-in-progress: false
+
+jobs:
+  intraday-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: market-edge-paper-trader
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Init database
+        run: python scripts/init_db.py
+      - name: Run intraday scan
+        run: python scripts/run_intraday_scan.py
+      - name: Generate intraday dashboard
+        env:
+          DASHBOARD_PASSWORD: "trading2025"
+        run: python scripts/generate_intraday_dashboard.py
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/database.sqlite data/intraday/ ../docs
+          git diff --staged --quiet && echo "No changes" || \
+            git commit -m "Intraday scan: $(date -u +%H:%M UTC) [skip ci]"
+          git push
