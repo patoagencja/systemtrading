@@ -1,11 +1,17 @@
 """
-Backtest: simulate day-by-day trading over the last 12 months.
+Backtest: simulate day-by-day trading over a historical window.
 No look-ahead: for each simulated day, only data up to that day is used.
 Entry timing: signal generated on day T → position entered at day T+1 open.
 Results are saved to the database and an equity curve is printed.
+
+Usage:
+  python scripts/run_backtest.py                    # default: last 12 months
+  python scripts/run_backtest.py --months 18        # last N months
+  python scripts/run_backtest.py --start 2023-01-01 # explicit start date
 """
 import sys
 import os
+import argparse
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import time
@@ -29,9 +35,10 @@ from app.portfolio import Portfolio
 from app.utils import trading_days_between
 
 
-def run_backtest():
+def run_backtest(start_date: date = None, months: int = 12):
     end_date = date.today() - timedelta(days=1)
-    start_date = end_date - relativedelta(months=12)
+    if start_date is None:
+        start_date = end_date - relativedelta(months=months)
 
     print(f"\n{'='*60}")
     print(f"  BACKTEST: {start_date} → {end_date}")
@@ -325,10 +332,10 @@ def run_backtest():
                   f"({sign}{pnl_total/INITIAL_CAPITAL_PLN*100:.2f}%)")
 
     broker.update_strategy_stats()
-    _print_backtest_summary(equity_curve)
+    _print_backtest_summary(equity_curve, start_date, end_date)
 
 
-def _print_backtest_summary(equity_curve: list):
+def _print_backtest_summary(equity_curve: list, start_date=None, end_date=None):
     if not equity_curve:
         print("No data.")
         return
@@ -355,6 +362,21 @@ def _print_backtest_summary(equity_curve: list):
     finally:
         conn.close()
 
+    # Sharpe ratio from daily returns
+    daily_returns = []
+    for i in range(1, len(values)):
+        if values[i - 1] > 0:
+            daily_returns.append((values[i] - values[i - 1]) / values[i - 1])
+    sharpe = 0.0
+    if len(daily_returns) > 1:
+        import math
+        mean_r = sum(daily_returns) / len(daily_returns)
+        var = sum((r - mean_r) ** 2 for r in daily_returns) / (len(daily_returns) - 1)
+        std_r = math.sqrt(var) if var > 0 else 0
+        rf = (1.04) ** (1 / 252) - 1
+        if std_r > 0:
+            sharpe = (mean_r - rf) / std_r * math.sqrt(252)
+
     print(f"\n{'='*60}")
     print(f"  BACKTEST RESULTS")
     print(f"{'='*60}")
@@ -363,6 +385,7 @@ def _print_backtest_summary(equity_curve: list):
     print(f"  Total P&L          : {sign}{pnl:>14,.2f} PLN")
     print(f"  Total return       : {sign}{ret:>13.2f} %")
     print(f"  Max drawdown       : {max_dd:>14.2f} %")
+    print(f"  Sharpe ratio       : {sharpe:>14.2f}")
     print(f"  Total closed trades: {total_trades:>15d}")
     if total_trades > 0:
         print(f"  Win rate           : {wins/total_trades*100:>13.1f} %")
@@ -386,4 +409,9 @@ if __name__ == "__main__":
     except ImportError:
         print("Install python-dateutil: pip install python-dateutil")
         sys.exit(1)
-    run_backtest()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--start", help="Start date YYYY-MM-DD")
+    parser.add_argument("--months", type=int, default=12, help="Number of months (default: 12)")
+    args = parser.parse_args()
+    start = date.fromisoformat(args.start) if args.start else None
+    run_backtest(start_date=start, months=args.months)
