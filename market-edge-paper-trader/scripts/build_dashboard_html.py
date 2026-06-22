@@ -999,6 +999,10 @@ tr:hover td{{background:var(--surface2)}}
       <span class="brand-sep">|</span>
       <span class="brand-sub">Paper Trader</span>
     </div>
+    <div class="mode-toggle" style="margin-right:4px">
+      <button class="mode-btn active" id="engine-swing" onclick="setEngine('swing')">Swing</button>
+      <button class="mode-btn" id="engine-intraday" onclick="setEngine('intraday')">Intraday</button>
+    </div>
     <div class="mode-toggle">
       <button class="mode-btn active" data-mode="live" onclick="setMode('live')">Live</button>
       <button class="mode-btn" data-mode="backtest" onclick="setMode('backtest')">Backtest</button>
@@ -1036,6 +1040,23 @@ tr:hover td{{background:var(--surface2)}}
       ⚠️ Symulacja paper trading — nie porada inwestycyjna. System wirtualny, brak realnych transakcji.
       Wiarygodność wyników wymaga 100–200+ zamkniętych transakcji.
     </div>
+  </div>
+</div>
+
+<!-- Intraday engine overlay -->
+<div id="intraday-overlay" style="display:none;position:fixed;inset:52px 0 0 0;background:var(--bg);z-index:100;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px">
+  <div style="text-align:center;max-width:440px;padding:40px">
+    <div style="font-size:40px;margin-bottom:16px">📈</div>
+    <div style="font-size:20px;font-weight:700;margin-bottom:8px;color:var(--text)">Silnik intraday</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.6">
+      Dashboard intraday dostępny jako osobna strona.<br>
+      Strategie: VWAP Mean Reversion, Opening Range Breakout,<br>
+      Momentum Continuation, Relative Strength Pullback.<br>
+      Interwał: 30m · Brak pozycji overnight.
+    </div>
+    <a href="intraday_dashboard.html" style="display:inline-block;padding:10px 28px;background:var(--accent);color:#fff;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px">
+      Przejdź do dashboardu intraday →
+    </a>
   </div>
 </div>
 
@@ -1120,7 +1141,20 @@ tr:hover td{{background:var(--surface2)}}
   }});
 }})();
 
-var MODE="live", TAB="overview";
+var MODE="live", TAB="overview", ENGINE="swing";
+
+function setEngine(e){{
+  ENGINE=e;
+  document.getElementById("engine-swing").classList.toggle("active",e==="swing");
+  document.getElementById("engine-intraday").classList.toggle("active",e==="intraday");
+  var overlay=document.getElementById("intraday-overlay");
+  var appContent=document.getElementById("app");
+  if(e==="intraday"){{
+    overlay.style.display="flex";
+  }}else{{
+    overlay.style.display="none";
+  }}
+}}
 
 function setMode(m){{
   MODE=m;

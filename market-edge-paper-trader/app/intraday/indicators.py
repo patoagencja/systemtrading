@@ -58,16 +58,24 @@ def compute_intraday_indicators(
     def _session_vwap(grp):
         cum_tp_vol = (grp["_tp"] * grp["volume"]).cumsum()
         cum_vol = grp["volume"].cumsum()
-        return cum_tp_vol / cum_vol.replace(0, np.nan)
+        result = cum_tp_vol / cum_vol.replace(0, np.nan)
+        return result
 
-    df["vwap"] = df.groupby("_date", group_keys=False).apply(_session_vwap)
+    _vwap_result = df.groupby("_date", group_keys=False).apply(_session_vwap)
+    # Handle both pandas versions: newer may return DataFrame
+    if isinstance(_vwap_result, pd.DataFrame):
+        _vwap_result = _vwap_result.iloc[:, 0]
+    df["vwap"] = _vwap_result
 
     # VWAP z-score (session rolling std of close)
     def _session_zscore(grp):
         rolling_std = grp["close"].expanding().std()
-        return (grp["close"] - grp["vwap"]) / rolling_std.replace(0, np.nan)
+        return (grp["close"] - grp["vwap"].reindex(grp.index)) / rolling_std.replace(0, np.nan)
 
-    df["vwap_zscore"] = df.groupby("_date", group_keys=False).apply(_session_zscore)
+    _zscore_result = df.groupby("_date", group_keys=False).apply(_session_zscore)
+    if isinstance(_zscore_result, pd.DataFrame):
+        _zscore_result = _zscore_result.iloc[:, 0]
+    df["vwap_zscore"] = _zscore_result
 
     # ── EMAs ─────────────────────────────────────────────────────────────────
     df["ema9"]  = df["close"].ewm(span=9, adjust=False).mean()
@@ -91,7 +99,10 @@ def compute_intraday_indicators(
         first_open = grp["open"].iloc[0]
         return (grp["close"] - first_open) / first_open if first_open != 0 else pd.Series(0.0, index=grp.index)
 
-    df["session_return"] = df.groupby("_date", group_keys=False).apply(_session_open)
+    _session_ret_result = df.groupby("_date", group_keys=False).apply(_session_open)
+    if isinstance(_session_ret_result, pd.DataFrame):
+        _session_ret_result = _session_ret_result.iloc[:, 0]
+    df["session_return"] = _session_ret_result
 
     # ── Bar returns ───────────────────────────────────────────────────────────
     ret = df["close"].pct_change()
