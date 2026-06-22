@@ -917,21 +917,15 @@ window.addEventListener("DOMContentLoaded",function(){{
 # ── entry point ───────────────────────────────────────────────────────────────
 
 def main():
-    os.makedirs(DOCS_DIR, exist_ok=True)
-
-    live = gather("live")
-    bt = gather("backtest")
-
-    live_m = compute_intraday_metrics(live)
-    bt_m = compute_intraday_metrics(bt)
-
-    updated = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    html = build_html(live, live_m, bt, bt_m, updated=updated)
-
-    out_path = os.path.join(DOCS_DIR, "intraday_dashboard.html")
-    with open(out_path, "w", encoding="utf-8") as f:
-        f.write(html)
-    print(f"Intraday dashboard written → {out_path}  ({len(html):,} bytes)")
+    """Delegates to build_dashboard_html to produce the unified docs/index.html."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "build_dashboard_html",
+        os.path.join(SCRIPT_DIR, "build_dashboard_html.py"),
+    )
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    mod.main()
 
 
 if __name__ == "__main__":

@@ -62,7 +62,7 @@ jobs:
       - name: Generate dashboard
         env:
           DASHBOARD_PASSWORD: "trading2025"
-        run: python scripts/generate_intraday_dashboard.py
+        run: python scripts/build_dashboard_html.py
       - name: Upload reports
         uses: actions/upload-artifact@v4
         with:

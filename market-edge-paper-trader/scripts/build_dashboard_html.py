@@ -9,6 +9,7 @@ from datetime import datetime, date
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(SCRIPT_DIR, ".."))
+sys.path.insert(0, SCRIPT_DIR)  # for importing sibling scripts
 
 import plotly.graph_objects as go
 
@@ -319,6 +320,42 @@ def render_right_panel_positions(trades: list) -> str:
             f"<div class='pos-row'>"
             f"<span class='pos-ticker'>{t['ticker']}</span>"
             f"<span class='pos-pnl {cls}'>{sign}{pnl_pct:.1f}%</span>"
+            f"</div>"
+        )
+    return "".join(rows)
+
+
+def render_intraday_signals_mini(signals: list) -> str:
+    if not signals:
+        return "<p class='panel-empty'>Brak sygnałów intraday</p>"
+    rows = []
+    for s in signals[:6]:
+        score = float(s.get("score") or 0)
+        strategy = (s.get("strategy") or "").replace("_", " ")[:16]
+        status = (s.get("status") or "")[:3].upper()
+        rows.append(
+            f"<div class='signal-row'>"
+            f"<div><div class='signal-ticker'>{s.get('ticker','')}</div>"
+            f"<div class='signal-rr'>{strategy}</div></div>"
+            f"<div><div class='signal-score'>{score:.0f}</div>"
+            f"<div class='signal-rr'>{status}</div></div>"
+            f"</div>"
+        )
+    return "".join(rows)
+
+
+def render_intraday_positions_mini(positions: list) -> str:
+    if not positions:
+        return "<p class='panel-empty'>Brak pozycji intraday</p>"
+    rows = []
+    for p in positions[:6]:
+        entry = float(p.get("entry_price") or 0)
+        strategy = (p.get("strategy") or "").replace("_", " ")[:15]
+        rows.append(
+            f"<div class='pos-row'>"
+            f"<div><div class='pos-ticker'>{p.get('ticker','')}</div>"
+            f"<div class='signal-rr'>{strategy}</div></div>"
+            f"<div class='pos-pnl'>{entry:.2f}</div>"
             f"</div>"
         )
     return "".join(rows)
@@ -876,7 +913,8 @@ def build_trades_js(live: dict, bt: dict) -> str:
 # ── full HTML assembly ────────────────────────────────────────────────────────
 
 def build_html(live: dict, live_m: dict, bt: dict, bt_m: dict,
-               benchmark=None, updated: str = "") -> str:
+               benchmark=None, updated: str = "",
+               intraday: dict = None) -> str:
     import hashlib
     pw_hash = hashlib.sha256(DASHBOARD_PASSWORD.encode()).hexdigest()
     if not updated:
@@ -904,6 +942,36 @@ def build_html(live: dict, live_m: dict, bt: dict, bt_m: dict,
     live_positions_mini = render_right_panel_positions(live["open_trades"])
     bt_signals_mini = "<p class='panel-empty'>Tylko tryb Live</p>"
     bt_positions_mini = render_right_panel_positions(bt["open_trades"])
+
+    # ── intraday panels ──────────────────────────────────────────────────────
+    _id_ph = ("<div class='empty-state'><div class='empty-icon'>&#x1F4C8;</div>"
+              "<div class='empty-title'>Brak danych intraday</div>"
+              "<div class='empty-sub'>Uruchom backtest intraday lub poczekaj na pierwszy skan live.</div></div>")
+    id_live_overview = id_live_positions = id_live_signals = id_live_trades = id_live_strategies = id_live_analysis = _id_ph
+    id_bt_overview = id_bt_positions = id_bt_trades = id_bt_strategies = id_bt_analysis = _id_ph
+    id_live_sig_mini = id_live_pos_mini = id_bt_pos_mini = ""
+
+    if intraday:
+        try:
+            import generate_intraday_dashboard as _id
+            idlive, idlive_m = intraday["live"], intraday["live_m"]
+            idbt, idbt_m = intraday["bt"], intraday["bt_m"]
+            id_live_overview   = _id.render_overview_panel(idlive, idlive_m)
+            id_live_positions  = _id.render_positions_panel(idlive)
+            id_live_signals    = _id.render_signals_panel(idlive)
+            id_live_trades     = _id.render_trades_panel(idlive)
+            id_live_strategies = _id.render_strategies_panel(idlive, idlive_m)
+            id_live_analysis   = _id.render_analysis_panel(idlive, idlive_m)
+            id_bt_overview     = _id.render_overview_panel(idbt, idbt_m)
+            id_bt_positions    = _id.render_positions_panel(idbt)
+            id_bt_trades       = _id.render_trades_panel(idbt)
+            id_bt_strategies   = _id.render_strategies_panel(idbt, idbt_m)
+            id_bt_analysis     = _id.render_analysis_panel(idbt, idbt_m)
+            id_live_sig_mini   = render_intraday_signals_mini(idlive.get("signals", []))
+            id_live_pos_mini   = render_intraday_positions_mini(idlive.get("open_positions", []))
+            id_bt_pos_mini     = render_intraday_positions_mini(idbt.get("open_positions", []))
+        except Exception as e:
+            print(f"  [warn] intraday panel rendering failed: {e}")
 
     return f"""<!DOCTYPE html>
 <html lang="pl">
@@ -1363,13 +1431,6 @@ tbody td:first-child {{ color: var(--text); font-weight: 600; }}
   font-size: 12px; color: var(--text2); line-height: 1.5;
 }}
 
-/* ── INTRADAY OVERLAY ── */
-#intraday-overlay {{
-  display: none; position: fixed;
-  inset: var(--header-h) 0 0 0;
-  background: var(--bg); z-index: 100;
-  flex-direction: column; align-items: center; justify-content: center; gap: 16px;
-}}
 </style>
 </head>
 <body>
@@ -1471,15 +1532,31 @@ tbody td:first-child {{ color: var(--text); font-weight: 600; }}
 
     <!-- Right panel -->
     <aside id="right-panel">
-      <div class="panel-section" id="rp-signals-section">
-        <h3 class="panel-title">Sygnaly oczekujace</h3>
-        <div id="rp-signals-live">{live_signals_mini}</div>
-        <div id="rp-signals-bt" style="display:none">{bt_signals_mini}</div>
+      <!-- Swing right panel -->
+      <div id="rp-swing">
+        <div class="panel-section">
+          <h3 class="panel-title">Sygnaly oczekujace</h3>
+          <div id="rp-signals-live">{live_signals_mini}</div>
+          <div id="rp-signals-bt" style="display:none">{bt_signals_mini}</div>
+        </div>
+        <div class="panel-section">
+          <h3 class="panel-title">Otwarte pozycje</h3>
+          <div id="rp-positions-live">{live_positions_mini}</div>
+          <div id="rp-positions-bt" style="display:none">{bt_positions_mini}</div>
+        </div>
       </div>
-      <div class="panel-section">
-        <h3 class="panel-title">Otwarte pozycje</h3>
-        <div id="rp-positions-live">{live_positions_mini}</div>
-        <div id="rp-positions-bt" style="display:none">{bt_positions_mini}</div>
+      <!-- Intraday right panel -->
+      <div id="rp-intraday" style="display:none">
+        <div class="panel-section">
+          <h3 class="panel-title">Sygnaly intraday</h3>
+          <div id="rp-id-signals-live">{id_live_sig_mini}</div>
+          <div id="rp-id-signals-bt" style="display:none"><p class='panel-empty'>Tylko tryb Live</p></div>
+        </div>
+        <div class="panel-section">
+          <h3 class="panel-title">Pozycje intraday</h3>
+          <div id="rp-id-positions-live">{id_live_pos_mini}</div>
+          <div id="rp-id-positions-bt" style="display:none">{id_bt_pos_mini}</div>
+        </div>
       </div>
     </aside>
 
@@ -1487,22 +1564,25 @@ tbody td:first-child {{ color: var(--text); font-weight: 600; }}
 
 </div><!-- /app -->
 
-<!-- Intraday engine overlay -->
-<div id="intraday-overlay">
-  <div style="text-align:center;max-width:440px;padding:40px">
-    <div style="font-size:40px;margin-bottom:16px">&#x1F4C8;</div>
-    <div style="font-size:20px;font-weight:700;margin-bottom:8px;color:var(--text)">Silnik intraday</div>
-    <div style="font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.6">
-      Dashboard intraday dostepny jako osobna strona.<br>
-      Strategie: VWAP Mean Reversion, Opening Range Breakout,<br>
-      Momentum Continuation, Relative Strength Pullback.<br>
-      Interwal: 30m &middot; Brak pozycji overnight.
-    </div>
-    <a href="intraday_dashboard.html" style="display:inline-block;padding:10px 28px;background:var(--accent);color:#fff;border-radius:var(--radius-sm);text-decoration:none;font-weight:700;font-size:14px">
-      Przejdz do dashboardu intraday &#x2192;
-    </a>
-  </div>
-</div>
+      <!-- Intraday Live panels -->
+      <div class="tab-panel" id="p-intraday-live-overview">{id_live_overview}
+        <div class="disclaimer">&#x26A0; Silnik intraday &#x2014; paper trading only. Brak realnych transakcji. Wszystkie pozycje zamykane przed 15:50 ET.</div>
+      </div>
+      <div class="tab-panel" id="p-intraday-live-positions">{id_live_positions}</div>
+      <div class="tab-panel" id="p-intraday-live-signals">{id_live_signals}</div>
+      <div class="tab-panel" id="p-intraday-live-trades">{id_live_trades}</div>
+      <div class="tab-panel" id="p-intraday-live-strategies">{id_live_strategies}</div>
+      <div class="tab-panel" id="p-intraday-live-analysis">{id_live_analysis}</div>
+
+      <!-- Intraday Backtest panels -->
+      <div class="tab-panel" id="p-intraday-backtest-overview">{id_bt_overview}
+        <div class="disclaimer">&#x26A0; Silnik intraday &#x2014; paper trading only. Brak realnych transakcji.</div>
+      </div>
+      <div class="tab-panel" id="p-intraday-backtest-positions">{id_bt_positions}</div>
+      <div class="tab-panel" id="p-intraday-backtest-signals"><p class="muted p16">Sygnaly dostepne tylko w trybie Live.</p></div>
+      <div class="tab-panel" id="p-intraday-backtest-trades">{id_bt_trades}</div>
+      <div class="tab-panel" id="p-intraday-backtest-strategies">{id_bt_strategies}</div>
+      <div class="tab-panel" id="p-intraday-backtest-analysis">{id_bt_analysis}</div>
 
 <!-- Trade detail modal -->
 <div id="trade-modal" onclick="if(event.target===this)closeModal()">
@@ -1603,22 +1683,27 @@ function setEngine(e){{
   ENGINE=e;
   document.getElementById("btn-swing").classList.toggle("active",e==="swing");
   document.getElementById("btn-intraday").classList.toggle("active",e==="intraday");
-  var overlay=document.getElementById("intraday-overlay");
-  if(e==="intraday"){{
-    overlay.style.display="flex";
-  }}else{{
-    overlay.style.display="none";
-  }}
+  document.getElementById("rp-swing").style.display=(e==="swing")?"":"none";
+  document.getElementById("rp-intraday").style.display=(e==="intraday")?"":"none";
+  // signals nav item only in live mode
+  var sigBtn=document.getElementById("sidebar-signals-btn");
+  if(sigBtn) sigBtn.style.display=(MODE==="live")?"":"none";
+  updatePanels();
 }}
 
 function setMode(m){{
   MODE=m;
   document.querySelectorAll(".mode-tab").forEach(function(b){{b.classList.toggle("active",b.dataset.mode===m)}});
-  // update right panel
+  // swing right panel
   document.getElementById("rp-signals-live").style.display=(m==="live")?"":"none";
   document.getElementById("rp-signals-bt").style.display=(m==="backtest")?"":"none";
   document.getElementById("rp-positions-live").style.display=(m==="live")?"":"none";
   document.getElementById("rp-positions-bt").style.display=(m==="backtest")?"":"none";
+  // intraday right panel
+  document.getElementById("rp-id-signals-live").style.display=(m==="live")?"":"none";
+  document.getElementById("rp-id-signals-bt").style.display=(m==="backtest")?"":"none";
+  document.getElementById("rp-id-positions-live").style.display=(m==="live")?"":"none";
+  document.getElementById("rp-id-positions-bt").style.display=(m==="backtest")?"":"none";
   // hide signals nav item in backtest
   var sigBtn=document.getElementById("sidebar-signals-btn");
   if(sigBtn) sigBtn.style.display=(m==="live")?"":"none";
@@ -1638,9 +1723,9 @@ function setTabDirect(t){{
 }}
 
 function updatePanels(){{
+  var prefix=(ENGINE==="swing")?"p-"+MODE+"-"+TAB:"p-intraday-"+MODE+"-"+TAB;
   document.querySelectorAll(".tab-panel").forEach(function(p){{
-    var id="p-"+MODE+"-"+TAB;
-    p.classList.toggle("active",p.id===id);
+    p.classList.toggle("active",p.id===prefix);
   }});
   setTimeout(function(){{window.dispatchEvent(new Event("resize"))}},80);
 }}
@@ -1744,8 +1829,24 @@ def main():
     if bt_dates:
         benchmark = fetch_spy_benchmark(bt_dates, INITIAL_CAPITAL_PLN)
 
+    # Intraday data (optional — fails gracefully if tables don't exist)
+    intraday = None
+    try:
+        import generate_intraday_dashboard as _id
+        id_live = _id.gather("live")
+        id_bt   = _id.gather("backtest")
+        intraday = {
+            "live":   id_live,
+            "live_m": _id.compute_intraday_metrics(id_live),
+            "bt":     id_bt,
+            "bt_m":   _id.compute_intraday_metrics(id_bt),
+        }
+        print("  Intraday data gathered OK")
+    except Exception as e:
+        print(f"  [warn] Intraday data unavailable: {e}")
+
     updated = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
-    html = build_html(live, live_m, bt, bt_m, benchmark=benchmark, updated=updated)
+    html = build_html(live, live_m, bt, bt_m, benchmark=benchmark, updated=updated, intraday=intraday)
 
     out_path = os.path.join(DOCS_DIR, "index.html")
     with open(out_path, "w", encoding="utf-8") as f:
