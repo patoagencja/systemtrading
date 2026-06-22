@@ -20,6 +20,7 @@ MAX_HOLDING_DAYS = int(os.getenv("MAX_HOLDING_DAYS", 10))
 DATA_PERIOD = os.getenv("DATA_PERIOD", "2y")
 DATA_INTERVAL = os.getenv("DATA_INTERVAL", "1d")
 MIN_HISTORY_BARS = 220
+MIN_AVG_VOLUME = int(os.getenv("MIN_AVG_VOLUME", 500_000))  # skip illiquid tickers
 
 # Realistic trading costs applied on every open and close
 # COMMISSION_PCT: broker fee per side as % of trade value (0.001 = 0.1%)

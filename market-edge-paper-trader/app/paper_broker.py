@@ -5,19 +5,29 @@ from app.strategies import Signal
 from app.config import PLN_USD_RATE, COMMISSION_PCT, SLIPPAGE_PCT
 
 
-def _apply_costs(price: float, side: str) -> tuple[float, float]:
+def _apply_costs(price: float, side: str,
+                 shares: float = 0, avg_volume: float = 0) -> tuple[float, float]:
     """Return (adjusted_price, cost_usd_per_share) after slippage + commission.
 
-    side='buy'  → price moves UP   (you pay more than close)
-    side='sell' → price moves DOWN  (you receive less than close)
+    Slippage scales with participation rate (shares / avg_daily_volume):
+      < 0.1% of daily volume  → 1.0× base slippage
+      0.1–1%                  → 2.0×
+      1–5%                    → 3.5×
+      > 5%                    → 6.0×
     """
-    slip = price * SLIPPAGE_PCT
-    comm = price * COMMISSION_PCT
-    total_cost_per_share = slip + comm          # USD per share per side
-    if side == "buy":
-        effective_price = price + slip          # worse fill on entry
+    if avg_volume > 0 and shares > 0:
+        p = shares / avg_volume
+        slip_mult = 6.0 if p >= 0.05 else 3.5 if p >= 0.01 else 2.0 if p >= 0.001 else 1.0
     else:
-        effective_price = price - slip          # worse fill on exit
+        slip_mult = 1.0
+
+    slip = price * SLIPPAGE_PCT * slip_mult
+    comm = price * COMMISSION_PCT
+    total_cost_per_share = slip + comm
+    if side == "buy":
+        effective_price = price + slip
+    else:
+        effective_price = price - slip
     return effective_price, total_cost_per_share
 
 
@@ -27,11 +37,9 @@ class PaperBroker:
         self.run_mode = run_mode
 
     def open_trade(self, signal: Signal, shares: float, position_value_pln: float,
-                   risk_pln: float, trade_date: date) -> int:
-        # Apply slippage + commission on entry (buy side)
-        eff_entry, cost_per_share = _apply_costs(signal.entry_price, "buy")
-        entry_cost_pln = cost_per_share * shares * self.rate  # commission only (slippage in price)
-        # The actual cash outflow is slightly more than the nominal position value
+                   risk_pln: float, trade_date: date, avg_volume: float = 0) -> int:
+        eff_entry, cost_per_share = _apply_costs(signal.entry_price, "buy", shares, avg_volume)
+        entry_cost_pln = cost_per_share * shares * self.rate
         actual_position_pln = eff_entry * shares * self.rate
         with db_cursor() as cur:
             cur.execute("""
@@ -89,7 +97,8 @@ class PaperBroker:
         finally:
             conn.close()
 
-    def close_trade(self, trade_id: int, exit_price_usd: float, exit_date: date, reason: str):
+    def close_trade(self, trade_id: int, exit_price_usd: float, exit_date: date, reason: str,
+                    avg_volume: float = 0):
         conn = get_connection()
         try:
             cur = conn.cursor()
@@ -102,8 +111,7 @@ class PaperBroker:
                 return
             entry_price, shares, risk_pln, entry_date_str = row
 
-            # Apply slippage + commission on exit (sell side)
-            eff_exit, cost_per_share = _apply_costs(exit_price_usd, "sell")
+            eff_exit, cost_per_share = _apply_costs(exit_price_usd, "sell", shares, avg_volume)
             exit_cost_pln = cost_per_share * shares * self.rate
 
             pnl_usd = (eff_exit - entry_price) * shares

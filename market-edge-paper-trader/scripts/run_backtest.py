@@ -1,6 +1,7 @@
 """
 Backtest: simulate day-by-day trading over the last 12 months.
 No look-ahead: for each simulated day, only data up to that day is used.
+Entry timing: signal generated on day T → position entered at day T+1 open.
 Results are saved to the database and an equity curve is printed.
 """
 import sys
@@ -11,10 +12,12 @@ import time
 import pandas as pd
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
+from dataclasses import replace as dc_replace
 
 from app.config import (
     INITIAL_CAPITAL_PLN, PLN_USD_RATE, MIN_SCORE_TO_OPEN,
     MIN_HISTORY_BARS, STRATEGY_MAX_HOLDING, COMMISSION_PCT, SLIPPAGE_PCT,
+    MIN_AVG_VOLUME,
 )
 from app.database import db_cursor, get_connection
 from app.data_provider import fetch_ohlcv_range, fetch_ohlcv
@@ -72,7 +75,10 @@ def run_backtest():
     broker = PaperBroker(PLN_USD_RATE, run_mode="backtest")
     trading_days = trading_days_between(start_date, end_date)
 
-    open_trades: list[dict] = []  # in-memory for speed
+    open_trades: list[dict] = []
+    # pending_entries: signals from day T waiting to enter at day T+1 open
+    # each item: {"signal": Signal, "signal_date": date, "avg_volume": float}
+    pending_entries: list[dict] = []
     cash = INITIAL_CAPITAL_PLN
     total_value = INITIAL_CAPITAL_PLN
     prev_value = INITIAL_CAPITAL_PLN
@@ -82,13 +88,80 @@ def run_backtest():
     for sim_date in trading_days:
         sim_date_str = str(sim_date)
 
-        # Slice all data up to sim_date (no look-ahead)
         def slice_df(df: pd.DataFrame) -> pd.DataFrame:
             return df[df.index.date <= sim_date]  # type: ignore
 
         spy_today = slice_df(spy_full) if not spy_full.empty else pd.DataFrame()
 
-        # ── Update open trades ──────────────────────────────────────
+        # ── Phase 1: Enter pending signals at today's open ─────────────
+        still_pending = []
+        new_today = 0
+        open_tickers = {t["ticker"] for t in open_trades}
+        invested_pln = sum(t["position_value_pln"] for t in open_trades)
+        risk_mgr = RiskManager(total_value, PLN_USD_RATE)
+
+        for pe in pending_entries:
+            sig = pe["signal"]
+            avg_volume = pe["avg_volume"]
+
+            if sig.ticker in open_tickers:
+                continue  # already have a position
+
+            df_full = all_data.get(sig.ticker)
+            if df_full is None:
+                continue
+            df_slice = slice_df(df_full)
+            if df_slice.empty or str(df_slice.iloc[-1].name.date()) != sim_date_str:  # type: ignore
+                still_pending.append(pe)  # no data yet, try next day
+                continue
+
+            actual_entry = float(df_slice.iloc[-1]["open"])
+            if actual_entry <= 0:
+                continue
+
+            # Use actual open as entry; keep original SL/TP (ATR-based from signal day)
+            actual_sig = dc_replace(sig, entry_price=actual_entry)
+            sizing = risk_mgr.calc_position_size(actual_entry, sig.stop_loss)
+            if not sizing["valid"]:
+                continue
+
+            can_open, _ = risk_mgr.can_open_position(
+                sizing["position_value_pln"], invested_pln, len(open_trades)
+            )
+            if not can_open:
+                continue
+            if sizing["position_value_pln"] > cash:
+                continue
+
+            db_id = broker.open_trade(
+                actual_sig, sizing["shares"], sizing["position_value_pln"],
+                sizing["risk_pln"], sim_date, avg_volume,
+            )
+            entry_cost_pln = sizing["position_value_pln"] * (COMMISSION_PCT + SLIPPAGE_PCT)
+            cash -= sizing["position_value_pln"] + entry_cost_pln
+            invested_pln += sizing["position_value_pln"]
+
+            open_trades.append({
+                "db_id": db_id,
+                "ticker": sig.ticker,
+                "strategy": sig.strategy,
+                "entry_date": str(sim_date),
+                "entry_price": actual_entry,
+                "stop_loss": sig.stop_loss,
+                "take_profit": sig.take_profit,
+                "shares": sizing["shares"],
+                "position_value_pln": sizing["position_value_pln"],
+                "risk_pln": sizing["risk_pln"],
+                "max_holding_days": sig.max_holding_days,
+                "current_price": actual_entry,
+                "avg_volume": avg_volume,
+            })
+            open_tickers.add(sig.ticker)
+            new_today += 1
+
+        pending_entries = still_pending
+
+        # ── Phase 2: Update & close open positions ─────────────────────
         closed_today = 0
         still_open = []
         for trade in open_trades:
@@ -113,6 +186,7 @@ def run_backtest():
             current_high  = float(latest["high"])
             current_low   = float(latest["low"])
             sma50 = latest.get("sma50")
+            avg_volume = trade.get("avg_volume", 0)
 
             entry_date_obj = date.fromisoformat(trade["entry_date"])
             holding_days = (sim_date - entry_date_obj).days
@@ -129,15 +203,12 @@ def run_backtest():
             tp_hit = current_high >= take_profit
 
             if current_open <= stop_loss:
-                # Gapped down past SL at open — fill at open (worse than SL)
                 exit_price = current_open
                 exit_reason = "stop_loss"
             elif current_open >= take_profit:
-                # Gapped up past TP at open — fill at open (better than TP)
                 exit_price = current_open
                 exit_reason = "take_profit"
             elif sl_hit and tp_hit:
-                # Both hit intraday — open proximity tells us which came first
                 if abs(current_open - stop_loss) <= abs(current_open - take_profit):
                     exit_price = stop_loss
                     exit_reason = "stop_loss"
@@ -160,41 +231,29 @@ def run_backtest():
                 exit_reason = "technical_exit_below_sma50"
 
             if exit_price is not None:
-                # Apply sell-side slippage + commission
                 slip = exit_price * SLIPPAGE_PCT
                 comm = exit_price * COMMISSION_PCT
                 eff_exit = exit_price - slip
                 exit_cost_pln = comm * shares * PLN_USD_RATE
                 pnl_usd = (eff_exit - entry_price) * shares
                 pnl_pln = pnl_usd * PLN_USD_RATE - exit_cost_pln
-                pnl_pct = (eff_exit - entry_price) / entry_price * 100
-                risk_pln = trade["risk_pln"]
-                r_multiple = pnl_pln / risk_pln if risk_pln > 0 else 0
-
                 cash += trade["position_value_pln"] + pnl_pln
 
-                broker.close_trade(trade["db_id"], exit_price, sim_date, exit_reason)
+                broker.close_trade(trade["db_id"], exit_price, sim_date, exit_reason, avg_volume)
                 closed_today += 1
             else:
-                # Update unrealized PnL
                 broker.update_open_trade_pnl(trade["db_id"], current_close, holding_days)
                 trade["current_price"] = current_close
                 still_open.append(trade)
 
         open_trades = still_open
 
-        # ── Scan for new signals ────────────────────────────────────
-        open_tickers = {t["ticker"] for t in open_trades}
+        # ── Phase 3: Scan for new signals → queue for tomorrow ─────────
         invested_pln = sum(t["position_value_pln"] for t in open_trades)
-
-        # Recompute total value including unrealized
-        unrealized = sum(
-            (t.get("current_price", t["entry_price"]) - t["entry_price"]) * t["shares"] * PLN_USD_RATE
-            for t in open_trades
-        )
-        total_value = cash + invested_pln  # position_value_pln is at entry; approximate
+        total_value = cash + invested_pln
         risk_mgr = RiskManager(total_value, PLN_USD_RATE)
-        new_today = 0
+        open_tickers = {t["ticker"] for t in open_trades}
+        pending_tickers = {pe["signal"].ticker for pe in pending_entries}
 
         all_signals = []
         for item in watchlist:
@@ -207,8 +266,12 @@ def run_backtest():
                 continue
             if get_latest_row(df_slice) is None:
                 continue
-            # Only act on bar if it belongs to sim_date
             if str(df_slice.iloc[-1].name.date()) != sim_date_str:  # type: ignore
+                continue
+
+            # Volume filter: skip thinly-traded tickers
+            avg_vol = float(df_slice["volume"].tail(20).mean())
+            if avg_vol < MIN_AVG_VOLUME:
                 continue
 
             sector_etf_df = None
@@ -220,53 +283,17 @@ def run_backtest():
             sigs = run_all_strategies(ticker, df_slice, spy_today, sector_etf_df)
             for s in sigs:
                 if s.score >= MIN_SCORE_TO_OPEN:
-                    all_signals.append(s)
+                    all_signals.append((s, avg_vol))
 
-        all_signals.sort(key=lambda s: s.score, reverse=True)
+        all_signals.sort(key=lambda x: x[0].score, reverse=True)
 
-        for sig in all_signals:
-            if sig.ticker in open_tickers:
+        for sig, avg_vol in all_signals:
+            if sig.ticker in open_tickers or sig.ticker in pending_tickers:
                 continue
-            if len(open_trades) >= 40:
+            if len(open_trades) + len(pending_entries) >= 40:
                 break
-
-            sizing = risk_mgr.calc_position_size(sig.entry_price, sig.stop_loss)
-            if not sizing["valid"]:
-                continue
-
-            can_open, _ = risk_mgr.can_open_position(
-                sizing["position_value_pln"], invested_pln, len(open_trades)
-            )
-            if not can_open:
-                continue
-            if sizing["position_value_pln"] > cash:
-                continue
-
-            db_id = broker.open_trade(
-                sig, sizing["shares"], sizing["position_value_pln"],
-                sizing["risk_pln"], sim_date,
-            )
-            # Apply buy-side slippage + commission to cash
-            entry_cost_pln = sizing["position_value_pln"] * (COMMISSION_PCT + SLIPPAGE_PCT)
-            cash -= sizing["position_value_pln"] + entry_cost_pln
-            invested_pln += sizing["position_value_pln"]
-
-            open_trades.append({
-                "db_id": db_id,
-                "ticker": sig.ticker,
-                "strategy": sig.strategy,
-                "entry_date": str(sim_date),
-                "entry_price": sig.entry_price,
-                "stop_loss": sig.stop_loss,
-                "take_profit": sig.take_profit,
-                "shares": sizing["shares"],
-                "position_value_pln": sizing["position_value_pln"],
-                "risk_pln": sizing["risk_pln"],
-                "max_holding_days": sig.max_holding_days,
-                "current_price": sig.entry_price,
-            })
-            open_tickers.add(sig.ticker)
-            new_today += 1
+            pending_entries.append({"signal": sig, "signal_date": sim_date, "avg_volume": avg_vol})
+            pending_tickers.add(sig.ticker)
 
         total_value = cash + sum(t["position_value_pln"] for t in open_trades)
         daily_pnl = total_value - prev_value
@@ -275,7 +302,6 @@ def run_backtest():
 
         equity_curve.append({"date": sim_date, "value": total_value, "pnl": pnl_total})
 
-        # Save snapshot directly
         with db_cursor() as cur:
             cur.execute("""
                 INSERT OR REPLACE INTO portfolio_snapshots
@@ -293,8 +319,8 @@ def run_backtest():
 
         if new_today or closed_today:
             sign = "+" if pnl_total >= 0 else ""
-            print(f"  {sim_date}  +{new_today} opened  -{closed_today} closed  "
-                  f"open={len(open_trades):2d}  "
+            print(f"  {sim_date}  +{new_today} entered  -{closed_today} closed  "
+                  f"open={len(open_trades):2d}  pending={len(pending_entries):2d}  "
                   f"P&L: {sign}{pnl_total:,.0f} PLN  "
                   f"({sign}{pnl_total/INITIAL_CAPITAL_PLN*100:.2f}%)")
 
@@ -355,7 +381,6 @@ def _print_backtest_summary(equity_curve: list):
 
 
 if __name__ == "__main__":
-    # Try to import dateutil; if missing give a friendly message
     try:
         from dateutil.relativedelta import relativedelta
     except ImportError:
