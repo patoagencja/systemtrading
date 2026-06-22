@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       start_date:
-        description: "Start date (YYYY-MM-DD)"
+        description: "Start date YYYY-MM-DD. yfinance 30m limit = last 60 days. Leave blank for auto (55 days ago)."
         required: false
-        default: "2025-01-01"
+        default: ""
       end_date:
         description: "End date (YYYY-MM-DD, default: today)"
         required: false
@@ -48,6 +48,18 @@ jobs:
           python scripts/build_intraday_universe.py
       - name: Reset previous intraday backtest data
         run: python scripts/reset_intraday_paper.py --force --mode backtest
+      - name: Resolve start date (default = 55 days ago)
+        id: dates
+        run: |
+          INPUT="${{ github.event.inputs.start_date }}"
+          if [ -z "$INPUT" ]; then
+            START=$(python -c "from datetime import date, timedelta; print(date.today() - timedelta(days=55))")
+          else
+            START="$INPUT"
+          fi
+          echo "start=$START" >> $GITHUB_OUTPUT
+          echo "Backtest start: $START"
+
       - name: Run intraday backtest
         run: |
           END_ARG=""
@@ -55,7 +67,7 @@ jobs:
             END_ARG="--end ${{ github.event.inputs.end_date }}"
           fi
           python scripts/run_intraday_backtest.py \
-            --start "${{ github.event.inputs.start_date }}" \
+            --start "${{ steps.dates.outputs.start }}" \
             $END_ARG \
             --cost-scenario "${{ github.event.inputs.cost_scenario }}" \
             --min-score "${{ github.event.inputs.min_score }}"
@@ -74,5 +86,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/database.sqlite data/intraday/ ../docs reports/intraday/
           git diff --staged --quiet && echo "No changes" || \
-            git commit -m "Intraday backtest: ${{ github.event.inputs.start_date }} [skip ci]"
+            git commit -m "Intraday backtest: ${{ steps.dates.outputs.start }} [skip ci]"
           git push

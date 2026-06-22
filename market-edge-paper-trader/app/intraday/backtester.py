@@ -85,6 +85,21 @@ def run_intraday_backtest(
     if min_score is None:
         min_score = INTRADAY_MIN_SCORE
 
+    # yfinance provides intraday (sub-daily) data only for the last ~60 days.
+    # Clip start_date and warn loudly so the user isn't surprised by empty results.
+    yf_intraday_limit = datetime.date.today() - datetime.timedelta(days=59)
+    if start_date < yf_intraday_limit:
+        old_start = start_date
+        start_date = yf_intraday_limit
+        log.warning(
+            f"yfinance 30m data only available for last ~60 days. "
+            f"Clipping start_date {old_start} → {start_date}. "
+            f"For longer history use Alpaca or another provider with INTRADAY_ALPACA_KEY."
+        )
+        print(
+            f"⚠️  yfinance 30m limit: start_date clipped {old_start} → {start_date}"
+        )
+
     scenario = COST_SCENARIOS.get(cost_scenario, COST_SCENARIOS["BASE"])
     interval_minutes = _interval_to_minutes(interval)
     provider = IntradayDataProvider()
