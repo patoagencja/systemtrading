@@ -599,6 +599,85 @@ def render_signals_panel(d: dict) -> str:
 </table></div>"""
 
 
+def render_yearly_breakdown(snapshots: list, closed_trades: list) -> str:
+    """Table with per-year return, trades, win-rate, Sharpe."""
+    if not snapshots:
+        return "<p class='muted'>Brak danych rocznych</p>"
+
+    import math
+
+    # group snapshot values by year
+    by_year: dict[str, list] = {}
+    for s in snapshots:
+        y = s["snapshot_date"][:4]
+        by_year.setdefault(y, []).append(s)
+
+    # group closed trades by exit year
+    trades_by_year: dict[str, list] = {}
+    for t in closed_trades:
+        ed = t.get("exit_date") or ""
+        y = ed[:4]
+        if y:
+            trades_by_year.setdefault(y, []).append(t)
+
+    rows = ""
+    prev_value = INITIAL_CAPITAL_PLN
+    for year in sorted(by_year.keys()):
+        snaps_y = by_year[year]
+        start_val = prev_value
+        end_val = snaps_y[-1]["total_value_pln"]
+        ret = (end_val - start_val) / start_val * 100 if start_val else 0
+        prev_value = end_val
+
+        # daily returns for Sharpe
+        daily_vals = [s["total_value_pln"] for s in snaps_y]
+        if start_val:
+            daily_vals = [start_val] + daily_vals
+        daily_rets = [(daily_vals[i] - daily_vals[i-1]) / daily_vals[i-1]
+                      for i in range(1, len(daily_vals)) if daily_vals[i-1] > 0]
+        sharpe = 0.0
+        if len(daily_rets) > 1:
+            mean_r = sum(daily_rets) / len(daily_rets)
+            var = sum((r - mean_r) ** 2 for r in daily_rets) / (len(daily_rets) - 1)
+            std_r = math.sqrt(var) if var > 0 else 0
+            rf_daily = 1.04 ** (1 / 252) - 1
+            if std_r > 0:
+                sharpe = (mean_r - rf_daily) / std_r * math.sqrt(252)
+
+        # trades stats
+        ty = trades_by_year.get(year, [])
+        wins = sum(1 for t in ty if (t.get("pnl_pln") or 0) > 0)
+        wr = wins / len(ty) * 100 if ty else 0
+        pnl_sum = sum(t.get("pnl_pln") or 0 for t in ty)
+
+        ret_cls = "pos" if ret >= 0 else "neg"
+        pnl_cls = "pos" if pnl_sum >= 0 else "neg"
+        rows += (
+            f"<tr>"
+            f"<td><b>{year}</b></td>"
+            f"<td class='mono {ret_cls}'>{_pct(ret)}</td>"
+            f"<td class='mono {pnl_cls}'>{_sgn(pnl_sum)}</td>"
+            f"<td class='mono'>{len(ty)}</td>"
+            f"<td class='mono'>{'—' if not ty else f'{wr:.0f}%'}</td>"
+            f"<td class='mono'>{sharpe:.2f}</td>"
+            f"</tr>"
+        )
+
+    if not rows:
+        return "<p class='muted'>Brak danych rocznych</p>"
+
+    return f"""
+<div class="table-scroll">
+<table>
+<thead><tr>
+  <th>Rok</th><th>Zwrot</th><th>P&amp;L</th>
+  <th>Transakcji</th><th>Win%</th><th>Sharpe</th>
+</tr></thead>
+<tbody>{rows}</tbody>
+</table>
+</div>"""
+
+
 def render_analysis_panel(d: dict, m: dict) -> str:
     heatmap = render_monthly_heatmap(m["monthly_returns"])
     exit_reasons = m["exit_reasons"]
@@ -623,8 +702,15 @@ def render_analysis_panel(d: dict, m: dict) -> str:
     best_rows = "".join(trade_mini_row(t) for t in best5) or "<tr><td colspan=4>—</td></tr>"
     worst_rows = "".join(trade_mini_row(t) for t in worst5) or "<tr><td colspan=4>—</td></tr>"
 
+    yearly_table = render_yearly_breakdown(d["snapshots"], d["closed_trades"])
+
     return f"""
 <div class="section-block">
+  <h3 class="section-title">Zestawienie roczne</h3>
+  {yearly_table}
+</div>
+
+<div class="section-block" style="margin-top:20px">
   <h3 class="section-title">Miesięczny P&amp;L</h3>
   {heatmap}
 </div>
@@ -635,7 +721,7 @@ def render_analysis_panel(d: dict, m: dict) -> str:
     <div class="stat-list">{reasons_rows}</div>
   </div>
   <div>
-    <h3 class="section-title">Roczny zwrot ann.</h3>
+    <h3 class="section-title">Łączne statystyki</h3>
     <div class="stat-list">
       <div class="stat-row"><span>Zwrot łączny</span>
         <span class="mono {_cls(m['total_return_pct'])}">{_pct(m['total_return_pct'])}</span></div>

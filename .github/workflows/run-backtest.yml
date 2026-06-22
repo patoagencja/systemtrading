@@ -1,0 +1,67 @@
+name: Run Backtest
+
+# Manually triggered backtest. Results are saved to database and dashboard rebuilt.
+# Default: from 2020-01-01 to today.
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: "Start date (YYYY-MM-DD). Leave blank to use 2020-01-01."
+        required: false
+        default: "2020-01-01"
+      reset:
+        description: "Clear existing backtest data before running?"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: paper-trader-db
+  cancel-in-progress: false
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: market-edge-paper-trader
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Ensure database and watchlist exist
+        run: |
+          python scripts/init_db.py
+          python scripts/seed_watchlist.py
+
+      - name: Clear previous backtest data
+        if: ${{ github.event.inputs.reset == 'true' }}
+        run: python scripts/reset_portfolio.py --force --mode backtest
+
+      - name: Run backtest
+        run: python scripts/run_backtest.py --start "${{ github.event.inputs.start_date }}"
+
+      - name: Build dashboard
+        env:
+          DASHBOARD_PASSWORD: "trading2025"
+        run: python scripts/build_dashboard_html.py
+
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/database.sqlite ../docs
+          git commit -m "Backtest from ${{ github.event.inputs.start_date }} [skip ci]" || echo "No changes"
+          git push

@@ -340,6 +340,8 @@ def _print_backtest_summary(equity_curve: list, start_date=None, end_date=None):
         print("No data.")
         return
 
+    import math
+
     final = equity_curve[-1]["value"]
     pnl = final - INITIAL_CAPITAL_PLN
     ret = pnl / INITIAL_CAPITAL_PLN * 100
@@ -358,27 +360,35 @@ def _print_backtest_summary(equity_curve: list, start_date=None, end_date=None):
         row = cur.fetchone()
         total_trades = row[0] or 0
         wins = row[1] or 0
-        total_pnl_db = row[2] or 0
+        # per-year trade stats
+        cur.execute("""
+            SELECT strftime('%Y', exit_date) yr,
+                   COUNT(*) n,
+                   SUM(CASE WHEN pnl_pln>0 THEN 1 ELSE 0 END) wins,
+                   SUM(pnl_pln) pnl
+            FROM trades WHERE status='closed' AND run_mode='backtest'
+            GROUP BY yr ORDER BY yr
+        """)
+        yearly_trades = {r[0]: {"n": r[1], "wins": r[2], "pnl": r[3] or 0}
+                         for r in cur.fetchall()}
     finally:
         conn.close()
 
-    # Sharpe ratio from daily returns
-    daily_returns = []
-    for i in range(1, len(values)):
-        if values[i - 1] > 0:
-            daily_returns.append((values[i] - values[i - 1]) / values[i - 1])
-    sharpe = 0.0
-    if len(daily_returns) > 1:
-        import math
-        mean_r = sum(daily_returns) / len(daily_returns)
-        var = sum((r - mean_r) ** 2 for r in daily_returns) / (len(daily_returns) - 1)
+    def _sharpe(vals):
+        rets = [(vals[i] - vals[i-1]) / vals[i-1]
+                for i in range(1, len(vals)) if vals[i-1] > 0]
+        if len(rets) < 2:
+            return 0.0
+        mean_r = sum(rets) / len(rets)
+        var = sum((r - mean_r) ** 2 for r in rets) / (len(rets) - 1)
         std_r = math.sqrt(var) if var > 0 else 0
-        rf = (1.04) ** (1 / 252) - 1
-        if std_r > 0:
-            sharpe = (mean_r - rf) / std_r * math.sqrt(252)
+        rf = 1.04 ** (1 / 252) - 1
+        return (mean_r - rf) / std_r * math.sqrt(252) if std_r > 0 else 0.0
+
+    sharpe = _sharpe(values)
 
     print(f"\n{'='*60}")
-    print(f"  BACKTEST RESULTS")
+    print(f"  BACKTEST RESULTS  {start_date} → {end_date}")
     print(f"{'='*60}")
     print(f"  Final value        : {final:>15,.2f} PLN")
     sign = "+" if pnl >= 0 else ""
@@ -390,6 +400,33 @@ def _print_backtest_summary(equity_curve: list, start_date=None, end_date=None):
     if total_trades > 0:
         print(f"  Win rate           : {wins/total_trades*100:>13.1f} %")
     print(f"{'='*60}")
+
+    # ── Year-by-year breakdown ─────────────────────────────────────────────────
+    by_year: dict[str, list] = {}
+    for e in equity_curve:
+        y = e["date"].strftime("%Y")
+        by_year.setdefault(y, []).append(e["value"])
+
+    if len(by_year) > 1:
+        print(f"\n  {'Year':<6} {'Return':>8} {'P&L (PLN)':>14} {'Trades':>7} "
+              f"{'Win%':>6} {'Sharpe':>7}")
+        print(f"  {'-'*6} {'-'*8} {'-'*14} {'-'*7} {'-'*6} {'-'*7}")
+        prev_val = INITIAL_CAPITAL_PLN
+        for year in sorted(by_year.keys()):
+            year_vals = by_year[year]
+            year_end = year_vals[-1]
+            year_ret = (year_end - prev_val) / prev_val * 100 if prev_val else 0
+            year_pnl = year_end - prev_val
+            sharpe_y = _sharpe([prev_val] + year_vals)
+            ty = yearly_trades.get(year, {"n": 0, "wins": 0, "pnl": 0})
+            wr = ty["wins"] / ty["n"] * 100 if ty["n"] else 0
+            sign_r = "+" if year_ret >= 0 else ""
+            sign_p = "+" if year_pnl >= 0 else ""
+            print(f"  {year:<6} {sign_r}{year_ret:>7.1f}% {sign_p}{year_pnl:>13,.0f} "
+                  f"{ty['n']:>7d} {wr:>5.0f}% {sharpe_y:>7.2f}")
+            prev_val = year_end
+
+    print(f"\n{'='*60}")
     print("\n  Equity curve (monthly):")
     monthly = {}
     for e in equity_curve:
