@@ -16,4 +16,4 @@ Strategy does not demonstrate an edge after costs.
 - Past performance does not guarantee future results.
 - Slippage and liquidity assumptions may differ in live trading.
 
-Generated: 2026-06-22T11:44:56.186633Z
+Generated: 2026-06-23T11:10:18.870628Z
