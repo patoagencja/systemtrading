@@ -132,6 +132,9 @@ def strategy_momentum_breakout(df: pd.DataFrame, ticker: str) -> Optional[Signal
 
 
 def strategy_pullback_trend(df: pd.DataFrame, ticker: str) -> Optional[Signal]:
+    # DISABLED_LOW_EDGE: PF=1.03, expectancy=19 PLN/trade across 1253 trades.
+    # Re-enable by removing this return statement after further investigation.
+    return None
     if len(df) < 220:
         return None
     row = df.iloc[-1]

@@ -44,6 +44,10 @@ EXIT_LOGIC_VERSION = "SIMPLE_DYNAMIC_EXIT_V1"
 # Variant identifiers
 VARIANT_FIXED_TP = "FIXED_TP_DYNAMIC_STOP"
 VARIANT_TRAILING = "TRAILING_AFTER_10"
+VARIANT_TRAILING_ONLY = "TRAILING_ONLY"
+
+# Max holding for TRAILING_ONLY variant (extended from default 10 to 15 sessions)
+TRAILING_ONLY_MAX_HOLDING = 15
 
 
 @dataclass
@@ -151,18 +155,30 @@ def _log_stop_update(state: TradeState, new_stop: float, status: str, session_da
 
 
 def process_session_bar(state: TradeState, open_, high, low, close,
-                         session_date, entry_cost_pct, variant) -> "ExitEvent | None":
+                         session_date, entry_cost_pct, variant,
+                         no_fixed_tp: bool = False,
+                         max_holding_days: int = None) -> "ExitEvent | None":
     """Process one session bar for one open trade.
 
     Returns an ExitEvent if the trade should be closed this session, else None.
     Mutates `state` with the end-of-session tracking/stop update when no exit
     occurs.
+
+    Args:
+        no_fixed_tp: When True, skip the fixed TP check (used by TRAILING_ONLY).
+                     Instead the trade can only exit via stop, gap, or max holding.
+        max_holding_days: Override for maximum holding sessions. Defaults to
+                          DEFAULT_MAX_HOLDING_SESSIONS (10) for most variants,
+                          or TRAILING_ONLY_MAX_HOLDING (15) for TRAILING_ONLY.
     """
     open_ = float(open_)
     high = float(high)
     low = float(low)
     close = float(close)
     entry = state.entry_price
+
+    # Determine effective no_fixed_tp flag from variant
+    _no_fixed_tp = no_fixed_tp or (variant == VARIANT_TRAILING_ONLY)
 
     def _pnl_pct(px):
         return (px - entry) / entry
@@ -175,8 +191,8 @@ def process_session_bar(state: TradeState, open_, high, low, close,
             pnl_pct=_pnl_pct(open_),
             sessions_held=state.sessions_held,
         )
-    if open_ >= state.take_profit:
-        # For both variants a gap above TP realises at the open.
+    if not _no_fixed_tp and open_ >= state.take_profit:
+        # For both FIXED_TP and TRAILING_AFTER_10: a gap above TP realises at the open.
         return ExitEvent(
             exit_price=open_,
             exit_reason="GAP_ABOVE_TAKE_PROFIT",
@@ -186,7 +202,7 @@ def process_session_bar(state: TradeState, open_, high, low, close,
 
     # ── Step 2: Intra-session hits ─────────────────────────────────────────
     sl_hit = low <= state.active_stop
-    tp_hit = high >= state.take_profit
+    tp_hit = (not _no_fixed_tp) and (high >= state.take_profit)
 
     if sl_hit and tp_hit:
         # conservative: stop wins
@@ -215,7 +231,12 @@ def process_session_bar(state: TradeState, open_, high, low, close,
         # which will lock +7% / activate trailing.
 
     # ── Step 3: Time exit ──────────────────────────────────────────────────
-    max_allowed = DEFAULT_MAX_HOLDING_SESSIONS
+    if max_holding_days is not None:
+        max_allowed = max_holding_days
+    elif variant == VARIANT_TRAILING_ONLY:
+        max_allowed = TRAILING_ONLY_MAX_HOLDING
+    else:
+        max_allowed = DEFAULT_MAX_HOLDING_SESSIONS
     if (variant == VARIANT_TRAILING and state.max_profit_pct >= 0.10
             and state.stop_status == "TRAILING"):
         max_allowed = DEFAULT_MAX_HOLDING_SESSIONS + MAX_WINNER_EXTENSION_SESSIONS
@@ -242,22 +263,38 @@ def process_session_bar(state: TradeState, open_, high, low, close,
     new_stop_candidate = state.active_stop  # never goes lower
     status = state.stop_status
 
-    if state.max_profit_pct >= PROFIT_LOCK_TRIGGER_3_PCT:        # +10%
-        trailing = state.highest_close * (1 - TRAILING_STOP_DISTANCE_PCT)
-        lock7 = entry * (1 + PROFIT_LOCK_LEVEL_3_PCT)
-        new_stop_candidate = max(state.active_stop, lock7, trailing)
-        status = "TRAILING"
-    elif state.max_profit_pct >= PROFIT_LOCK_TRIGGER_2_PCT:      # +8%
-        lock4 = entry * (1 + PROFIT_LOCK_LEVEL_2_PCT)
-        new_stop_candidate = max(state.active_stop, lock4)
-        status = "PROFIT_LOCK_4"
-    elif state.max_profit_pct >= PROFIT_LOCK_TRIGGER_1_PCT:      # +6%
-        lock2 = entry * (1 + PROFIT_LOCK_LEVEL_1_PCT)
-        new_stop_candidate = max(state.active_stop, lock2)
-        status = "PROFIT_LOCK_2"
-    elif state.max_profit_pct >= BREAK_EVEN_TRIGGER_PCT:         # +4%
-        new_stop_candidate = max(state.active_stop, be_price)
-        status = "BREAK_EVEN"
+    if variant == VARIANT_TRAILING_ONLY:
+        # TRAILING_ONLY: trailing starts at +8% (not +10%), no fixed TP.
+        # From +8%: trailing stop 3% below highest_close_since_entry.
+        if state.max_profit_pct >= PROFIT_LOCK_TRIGGER_2_PCT:      # +8% — activate trailing
+            trailing = state.highest_close * (1 - TRAILING_STOP_DISTANCE_PCT)
+            lock4 = entry * (1 + PROFIT_LOCK_LEVEL_2_PCT)
+            new_stop_candidate = max(state.active_stop, lock4, trailing)
+            status = "TRAILING"
+        elif state.max_profit_pct >= PROFIT_LOCK_TRIGGER_1_PCT:    # +6%: lock +2%
+            lock2 = entry * (1 + PROFIT_LOCK_LEVEL_1_PCT)
+            new_stop_candidate = max(state.active_stop, lock2)
+            status = "PROFIT_LOCK_2"
+        elif state.max_profit_pct >= BREAK_EVEN_TRIGGER_PCT:       # +4%: break-even
+            new_stop_candidate = max(state.active_stop, be_price)
+            status = "BREAK_EVEN"
+    else:
+        if state.max_profit_pct >= PROFIT_LOCK_TRIGGER_3_PCT:        # +10%
+            trailing = state.highest_close * (1 - TRAILING_STOP_DISTANCE_PCT)
+            lock7 = entry * (1 + PROFIT_LOCK_LEVEL_3_PCT)
+            new_stop_candidate = max(state.active_stop, lock7, trailing)
+            status = "TRAILING"
+        elif state.max_profit_pct >= PROFIT_LOCK_TRIGGER_2_PCT:      # +8%
+            lock4 = entry * (1 + PROFIT_LOCK_LEVEL_2_PCT)
+            new_stop_candidate = max(state.active_stop, lock4)
+            status = "PROFIT_LOCK_4"
+        elif state.max_profit_pct >= PROFIT_LOCK_TRIGGER_1_PCT:      # +6%
+            lock2 = entry * (1 + PROFIT_LOCK_LEVEL_1_PCT)
+            new_stop_candidate = max(state.active_stop, lock2)
+            status = "PROFIT_LOCK_2"
+        elif state.max_profit_pct >= BREAK_EVEN_TRIGGER_PCT:         # +4%
+            new_stop_candidate = max(state.active_stop, be_price)
+            status = "BREAK_EVEN"
 
     # Enforce: never move stop down.
     new_stop = max(state.active_stop, new_stop_candidate)

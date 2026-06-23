@@ -431,7 +431,21 @@ for version in closed["exit_logic_version"].unique():
     avg_hold = grp["holding_days"].mean()
     avg_max_profit = grp["max_profit_pct"].mean() * 100  # max_profit_pct is stored as decimal (0.04 = 4%)
     avg_realized = grp["pnl_pct"].mean()  # pnl_pct is stored as % already (5.35 = 5.35%)
-    capture_rate = avg_realized / avg_max_profit * 100 if avg_max_profit > 0 else 0
+    # Fixed profit_capture_rate: per-trade ratio for trades with positive max unrealized return.
+    # Uses realized_pct = pnl_pln / position_value_pln (avoids pnl_pct unit confusion).
+    positive_trades = grp[grp["max_profit_pct"] > 0.001].copy()
+    if len(positive_trades) > 0 and positive_trades["position_value_pln"].sum() > 0:
+        pos_val = positive_trades["position_value_pln"].clip(lower=1.0)
+        realized_pct_per_trade = positive_trades["pnl_pln"] / pos_val
+        max_pct_per_trade = positive_trades["max_profit_pct"].clip(lower=0.001)
+        per_trade_capture = (realized_pct_per_trade / max_pct_per_trade).clip(0, 2)
+        # Position-weighted capture rate
+        weights = positive_trades["position_value_pln"].clip(lower=1.0)
+        capture_rate = float((per_trade_capture * weights).sum() / weights.sum() * 100)
+        mean_capture_rate = float(per_trade_capture.mean() * 100)
+    else:
+        capture_rate = 0
+        mean_capture_rate = 0
     exit_rows.append({
         "exit_logic": version, "n_trades": len(grp),
         "win_rate_pct": round(win_rate, 1),
@@ -440,10 +454,12 @@ for version in closed["exit_logic_version"].unique():
         "avg_holding_days": round(avg_hold, 1),
         "avg_max_profit_pct": round(avg_max_profit, 2),
         "avg_realized_pct": round(avg_realized, 2),
-        "profit_capture_rate_pct": round(capture_rate, 1)
+        "profit_capture_rate_pct": round(capture_rate, 1),
+        "profit_capture_rate_mean_pct": round(mean_capture_rate, 1),
     })
     print(f"\n  {version}: n={len(grp)} | WR={win_rate:.0f}% | PF={pf:.2f} | AvgPnL={avg_pnl:.0f}")
-    print(f"    Avg max unrealized: {avg_max_profit:.2f}% | Avg realized: {avg_realized:.2f}% | Capture: {capture_rate:.0f}%")
+    print(f"    Avg max unrealized: {avg_max_profit:.2f}% | Avg realized: {avg_realized:.2f}%")
+    print(f"    Capture rate (position-weighted): {capture_rate:.1f}% | (mean per-trade): {mean_capture_rate:.1f}%")
 
 # Profit capture analysis by max_profit buckets
 profit_cap_rows = []

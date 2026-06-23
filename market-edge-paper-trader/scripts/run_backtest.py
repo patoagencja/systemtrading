@@ -39,7 +39,8 @@ from app import exit_logic as XL
 LEGACY = "LEGACY_EXIT_LOGIC"
 FIXED_TP = "FIXED_TP_DYNAMIC_STOP"
 TRAILING = "TRAILING_AFTER_10"
-NEW_VARIANTS = (FIXED_TP, TRAILING)
+TRAILING_ONLY = "TRAILING_ONLY"
+NEW_VARIANTS = (FIXED_TP, TRAILING, TRAILING_ONLY)
 
 # Round-trip cost fraction used for break-even computation in the new logic.
 COST_PCT = COMMISSION_PCT + SLIPPAGE_PCT
@@ -95,11 +96,13 @@ def run_backtest(start_date: date = None, months: int = 12,
       "LEGACY_EXIT_LOGIC"     — original static SL/TP behaviour (unchanged)
       "FIXED_TP_DYNAMIC_STOP" — SIMPLE_DYNAMIC_EXIT_V1, close at +10% TP
       "TRAILING_AFTER_10"     — SIMPLE_DYNAMIC_EXIT_V1, trail above +10%
+      "TRAILING_ONLY"         — no fixed TP, trailing 3% below highest_close from +8%, 15-session max
       "SIMPLE_DYNAMIC_EXIT_V1"— alias -> FIXED_TP_DYNAMIC_STOP
     """
     if exit_logic == "SIMPLE_DYNAMIC_EXIT_V1":
         exit_logic = FIXED_TP
     use_new = exit_logic in NEW_VARIANTS
+    use_trailing_only = exit_logic == TRAILING_ONLY
 
     end_date = date.today() - timedelta(days=1)
     if start_date is None:
@@ -312,6 +315,8 @@ def run_backtest(start_date: date = None, months: int = 12,
                     ev = XL.process_session_bar(
                         state, current_open, current_high, current_low,
                         current_close, sim_date_str, COST_PCT, exit_logic,
+                        no_fixed_tp=use_trailing_only,
+                        max_holding_days=XL.TRAILING_ONLY_MAX_HOLDING if use_trailing_only else None,
                     )
                     if ev is not None:
                         exit_price = ev.exit_price
@@ -664,12 +669,22 @@ def _aggregate(rows, equity_curve):
         m = len(s) // 2
         return s[m] if len(s) % 2 else (s[m-1] + s[m]) / 2
 
-    # profit-capture: final pnl_pct / max_profit_pct (when max>0)
+    # profit-capture: for trades where max_profit_pct > 0, compute
+    # per-trade ratio of realized_pct / max_profit_pct.
+    # realized_pct = pnl_pln / position_value_pln (actual gain on invested capital).
+    # Both values clipped to avoid div-by-zero and spurious outliers (>2x capture
+    # is impossible in practice — means bad data). Cap at 1.0 for averaging.
     captures = []
     for r in rows:
         mp = r.get("max_profit_pct") or 0
-        if mp > 0:
-            captures.append(max(0.0, min(1.5, (r["pnl_pct"] or 0) / 100.0 / mp)))
+        if mp > 0.001:  # only positive-max-profit trades
+            pos_val = r.get("position_value_pln") or 0
+            if pos_val > 0:
+                realized_pct = (r.get("pnl_pln") or 0) / pos_val
+            else:
+                realized_pct = (r.get("pnl_pct") or 0) / 100.0
+            per_trade_capture = max(0.0, min(2.0, realized_pct / max(mp, 0.001)))
+            captures.append(per_trade_capture)
 
     gap_rows = [r for r in rows if r.get("exit_reason") == "GAP_BELOW_ACTIVE_STOP"]
     gap_losses = [(r["pnl_pct"] or 0) for r in gap_rows]
@@ -961,7 +976,8 @@ def run_comparative_backtest(start_date=None, months=12, with_sensitivity=True):
     data_loaded = len(shared_data)
     for variant, mode in [(LEGACY, "backtest_v1"),
                           (FIXED_TP, "backtest_v2"),
-                          (TRAILING, "backtest_v3")]:
+                          (TRAILING, "backtest_v3"),
+                          (TRAILING_ONLY, "backtest_v4")]:
         res = run_backtest(start_date=start_date, months=months,
                            exit_logic=variant, run_mode=mode,
                            preloaded_data=shared_data)
@@ -1014,7 +1030,7 @@ if __name__ == "__main__":
     parser.add_argument("--start", help="Start date YYYY-MM-DD")
     parser.add_argument("--months", type=int, default=12, help="Number of months (default: 12)")
     parser.add_argument("--exit-logic", default="SIMPLE_DYNAMIC_EXIT_V1",
-                        help="LEGACY_EXIT_LOGIC | FIXED_TP_DYNAMIC_STOP | TRAILING_AFTER_10")
+                        help="LEGACY_EXIT_LOGIC | FIXED_TP_DYNAMIC_STOP | TRAILING_AFTER_10 | TRAILING_ONLY")
     parser.add_argument("--compare-all", action="store_true",
                         help="Run all 3 variants and generate comparison reports")
     parser.add_argument("--cost-scenario", default="BASE",
