@@ -34,7 +34,7 @@ concurrency:
 jobs:
   backtest:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 150
     defaults:
       run:
         working-directory: market-edge-paper-trader
