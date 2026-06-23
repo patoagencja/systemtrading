@@ -17,6 +17,9 @@ MAX_OPEN_POSITIONS = int(os.getenv("MAX_OPEN_POSITIONS", 40))
 MAX_PORTFOLIO_EXPOSURE_PCT = float(os.getenv("MAX_PORTFOLIO_EXPOSURE_PCT", 0.80))
 MIN_SCORE_TO_OPEN = float(os.getenv("MIN_SCORE_TO_OPEN", 75))
 MAX_HOLDING_DAYS = int(os.getenv("MAX_HOLDING_DAYS", 10))
+# Hard cap on take-profit distance from entry (as % of entry price).
+# Prevents ATR-based TP from requiring >5% moves when ATR is wide.
+MAX_TP_PCT = float(os.getenv("MAX_TP_PCT", 0.05))   # 5% max TP from entry
 DATA_PERIOD = os.getenv("DATA_PERIOD", "2y")
 DATA_INTERVAL = os.getenv("DATA_INTERVAL", "1d")
 MIN_HISTORY_BARS = 220

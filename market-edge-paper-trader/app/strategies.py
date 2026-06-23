@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from dataclasses import dataclass
 from typing import Optional
-from app.config import STRATEGY_MAX_HOLDING
+from app.config import STRATEGY_MAX_HOLDING, MAX_TP_PCT
 
 
 @dataclass
@@ -24,6 +24,9 @@ def _stop_and_tp(entry: float, atr: float, risk_ratio: float = 2.0, reward_ratio
     stop = entry - risk_ratio * atr
     risk = entry - stop
     tp = entry + reward_ratio * risk
+    # Hard cap: TP no further than MAX_TP_PCT above entry
+    tp_cap = entry * (1 + MAX_TP_PCT)
+    tp = min(tp, tp_cap)
     return stop, tp
 
 
