@@ -25,4 +25,4 @@
 | P&L ex Top 5 | 0 PLN |
 | P&L ex Top 10 | 0 PLN |
 
-Generated: 2026-06-22T11:44:56.183244Z
+Generated: 2026-06-23T11:10:18.866789Z
