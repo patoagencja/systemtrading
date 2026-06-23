@@ -55,4 +55,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/database.sqlite ../docs
           git commit -m "Backtest: update results [skip ci]" || echo "No changes to commit"
+          git pull --rebase origin ${{ github.ref_name }} || true
           git push

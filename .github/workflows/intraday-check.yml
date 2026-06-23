@@ -58,4 +58,5 @@ jobs:
           git add data/database.sqlite ../docs
           git diff --staged --quiet && echo "No changes" || \
             git commit -m "Intraday check: update positions [skip ci]"
+          git pull --rebase origin ${{ github.ref_name }} || true
           git push
