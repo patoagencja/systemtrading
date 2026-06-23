@@ -109,6 +109,25 @@ def gather(mode: str) -> dict:
         )
         d["pending_signals"] = [dict(r) for r in cur.fetchall()]
 
+        # Stop history per trade (SIMPLE_DYNAMIC_EXIT_V1). Optional table.
+        stop_hist: dict = {}
+        try:
+            cur.execute(
+                """SELECT sh.trade_id, sh.session_date, sh.previous_stop, sh.new_stop,
+                          sh.stop_status, sh.reason, sh.max_profit_pct, sh.highest_close
+                   FROM stop_history sh
+                   JOIN trades t ON t.id = sh.trade_id
+                   WHERE t.run_mode=?
+                   ORDER BY sh.trade_id, sh.session_date""",
+                (mode,),
+            )
+            for r in cur.fetchall():
+                rd = dict(r)
+                stop_hist.setdefault(str(rd["trade_id"]), []).append(rd)
+        except Exception:
+            pass
+        d["stop_history"] = stop_hist
+
     d["open_count"] = len(d["open_trades"])
     return d
 
@@ -520,14 +539,28 @@ def render_positions_panel(d: dict) -> str:
         pnl_pct = t.get("pnl_pct") or 0
         hold = t.get("holding_days") or 0
         tid = t.get("id", "")
+        active_stop = t.get("active_stop_loss")
+        if active_stop is None:
+            active_stop = t.get("stop_loss") or 0
+        max_profit = (t.get("max_profit_pct") or 0) * 100
+        locked = (t.get("locked_profit_pct") or 0) * 100
+        status = t.get("stop_status") or "INITIAL"
+        status_cls = {
+            "INITIAL": "badge-closed", "BREAK_EVEN": "badge-open",
+            "PROFIT_LOCK_2": "badge-open", "PROFIT_LOCK_4": "badge-open",
+            "PROFIT_LOCK_7": "badge-open", "TRAILING": "badge-open",
+        }.get(status, "badge-closed")
         rows.append(
             f"<tr class='tr-click' onclick='showTrade({tid})'>"
             f"<td><b>{t['ticker']}</b></td>"
             f"<td class='mono'>{t['strategy'].replace('_', ' ')}</td>"
             f"<td class='mono'>{t['entry_date']}</td>"
             f"<td class='mono'>{t['entry_price']:.2f}</td>"
-            f"<td class='mono'>{t['stop_loss']:.2f}</td>"
+            f"<td class='mono'>{active_stop:.2f}</td>"
             f"<td class='mono'>{t['take_profit']:.2f}</td>"
+            f"<td class='mono {_cls(max_profit)}'>{max_profit:+.1f}%</td>"
+            f"<td class='mono {_cls(locked)}'>{locked:+.1f}%</td>"
+            f"<td><span class='badge {status_cls}'>{status.replace('_', ' ')}</span></td>"
             f"<td class='mono'>{t['shares']:.1f}</td>"
             f"<td class='mono'>{hold}d</td>"
             f"<td class='mono {_cls(pnl)}'>{_sgn(pnl)}</td>"
@@ -540,7 +573,8 @@ def render_positions_panel(d: dict) -> str:
 <table>
 <thead><tr>
   <th>Ticker</th><th>Strategia</th><th>Wejscie</th><th>Cena wej.</th>
-  <th>Stop Loss</th><th>Take Profit</th><th>Akcje</th><th>Czas</th>
+  <th>Active Stop</th><th>TP</th><th>Max Profit</th><th>Locked</th><th>Status</th>
+  <th>Akcje</th><th>Czas</th>
   <th>P&amp;L PLN</th><th>P&amp;L %</th>
 </tr></thead>
 <tbody>{"".join(rows)}</tbody>
@@ -906,8 +940,24 @@ def build_trades_js(live: dict, bt: dict) -> str:
             "score": safe(t.get("score")),
             "entry_reason": safe(t.get("entry_reason")),
             "max_holding_days": safe(t.get("max_holding_days")),
+            # SIMPLE_DYNAMIC_EXIT_V1 trade-management fields
+            "initial_stop_loss": safe(t.get("initial_stop_loss")),
+            "active_stop_loss": safe(t.get("active_stop_loss")),
+            "highest_high_since_entry": safe(t.get("highest_high_since_entry")),
+            "highest_close_since_entry": safe(t.get("highest_close_since_entry")),
+            "max_profit_pct": safe(t.get("max_profit_pct")),
+            "locked_profit_pct": safe(t.get("locked_profit_pct")),
+            "stop_status": safe(t.get("stop_status")),
+            "exit_logic_version": safe(t.get("exit_logic_version")),
+            "active_stop_effective_date": safe(t.get("active_stop_effective_date")),
+            "max_unrealized_pnl_pct": safe(t.get("max_unrealized_pnl_pct")),
         }
-    return f"var TRADES={json.dumps(trades, ensure_ascii=False)};"
+
+    stop_hist = {}
+    stop_hist.update(live.get("stop_history") or {})
+    stop_hist.update(bt.get("stop_history") or {})
+    return (f"var TRADES={json.dumps(trades, ensure_ascii=False)};\n"
+            f"var STOP_HISTORY={json.dumps(stop_hist, ensure_ascii=False)};")
 
 
 # ── full HTML assembly ────────────────────────────────────────────────────────
@@ -1633,6 +1683,47 @@ tbody td:first-child {{ color: var(--text); font-weight: 600; }}
           <div class="modal-field"><div class="modal-field-label">Max hold dni</div><div class="modal-field-value" id="m-max-hold">&#x2014;</div></div>
         </div>
       </div>
+      <div id="m-mgmt-section" class="modal-section" style="display:none">
+        <div class="modal-section-title">Trade Management (SIMPLE_DYNAMIC_EXIT_V1)</div>
+        <div class="modal-grid">
+          <div class="modal-field"><div class="modal-field-label">Cena wejscia</div><div class="modal-field-value" id="m-mg-entry">&#x2014;</div></div>
+          <div class="modal-field"><div class="modal-field-label">Initial stop</div><div class="modal-field-value neg" id="m-mg-init-stop">&#x2014;</div></div>
+          <div class="modal-field"><div class="modal-field-label">Active stop</div><div class="modal-field-value" id="m-mg-active-stop">&#x2014;</div></div>
+          <div class="modal-field"><div class="modal-field-label">Take profit</div><div class="modal-field-value pos" id="m-mg-tp">&#x2014;</div></div>
+          <div class="modal-field"><div class="modal-field-label">Dystans do stopu</div><div class="modal-field-value" id="m-mg-dist-stop">&#x2014;</div></div>
+          <div class="modal-field"><div class="modal-field-label">Dystans do TP</div><div class="modal-field-value" id="m-mg-dist-tp">&#x2014;</div></div>
+          <div class="modal-field"><div class="modal-field-label">Najwyzszy high</div><div class="modal-field-value" id="m-mg-hh">&#x2014;</div></div>
+          <div class="modal-field"><div class="modal-field-label">Najwyzszy close</div><div class="modal-field-value" id="m-mg-hc">&#x2014;</div></div>
+          <div class="modal-field"><div class="modal-field-label">Max profit</div><div class="modal-field-value" id="m-mg-maxprofit">&#x2014;</div></div>
+          <div class="modal-field"><div class="modal-field-label">Locked profit</div><div class="modal-field-value" id="m-mg-locked">&#x2014;</div></div>
+          <div class="modal-field"><div class="modal-field-label">Status stopu</div><div class="modal-field-value" id="m-mg-status">&#x2014;</div></div>
+          <div class="modal-field"><div class="modal-field-label">Exit logic</div><div class="modal-field-value small" id="m-mg-version">&#x2014;</div></div>
+          <div class="modal-field"><div class="modal-field-label">Sesje</div><div class="modal-field-value" id="m-mg-sessions">&#x2014;</div></div>
+        </div>
+        <div style="margin-top:12px">
+          <div style="position:relative;height:10px;background:#1e2d3d;border-radius:5px;margin:18px 0 6px">
+            <div id="m-mg-bar-fill" style="position:absolute;top:0;bottom:0;left:0;background:linear-gradient(90deg,#ef4444,#f59e0b,#10b981);border-radius:5px;width:0%"></div>
+            <div id="m-mg-bar-stop" title="Active stop" style="position:absolute;top:-4px;width:2px;height:18px;background:#ef4444;left:0%"></div>
+            <div id="m-mg-bar-cur" title="Current" style="position:absolute;top:-6px;width:3px;height:22px;background:#3b82f6;left:0%"></div>
+            <div id="m-mg-bar-tp" title="Take profit" style="position:absolute;top:-4px;width:2px;height:18px;background:#10b981;right:0%"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3)">
+            <span>SL</span><span>Active SL</span><span>Current</span><span>TP</span>
+          </div>
+        </div>
+        <div id="m-mg-hist-wrap" style="margin-top:14px;display:none">
+          <div class="modal-field-label" style="cursor:pointer" onclick="toggleStopHist()">
+            &#x25B6; Historia zmian stopu (<span id="m-mg-hist-count">0</span>)
+          </div>
+          <div id="m-mg-hist" style="display:none;margin-top:8px;max-height:180px;overflow:auto">
+            <table style="width:100%;font-size:11px"><thead><tr>
+              <th style="text-align:left">Sesja</th><th style="text-align:right">Z</th>
+              <th style="text-align:right">Na</th><th style="text-align:left">Status</th>
+              <th style="text-align:right">Max%</th>
+            </tr></thead><tbody id="m-mg-hist-body"></tbody></table>
+          </div>
+        </div>
+      </div>
       <div id="m-reason-section" class="modal-section" style="display:none">
         <div class="modal-section-title">Uzasadnienie sygnalu</div>
         <div class="modal-reason" id="m-reason"></div>
@@ -1759,7 +1850,9 @@ function showTrade(id){{
   document.getElementById("m-hold").textContent=t.holding_days?t.holding_days+"d":"—";
   document.getElementById("m-entry-date").textContent=t.entry_date||"—";
   document.getElementById("m-entry-price").textContent=t.entry_price?parseFloat(t.entry_price).toFixed(2)+" USD":"—";
-  document.getElementById("m-sl").textContent=t.stop_loss?parseFloat(t.stop_loss).toFixed(2)+" USD":"—";
+  // Show ACTIVE stop in the entry section (falls back to stop_loss for legacy).
+  var slShown=(t.active_stop_loss!==""&&t.active_stop_loss!=null)?t.active_stop_loss:t.stop_loss;
+  document.getElementById("m-sl").textContent=slShown?parseFloat(slShown).toFixed(2)+" USD":"—";
   document.getElementById("m-tp").textContent=t.take_profit?parseFloat(t.take_profit).toFixed(2)+" USD":"—";
   document.getElementById("m-shares").textContent=t.shares?parseFloat(t.shares).toFixed(1):"—";
   document.getElementById("m-pos-val").textContent=_fmt(t.position_value_pln)+" PLN";
@@ -1783,6 +1876,55 @@ function showTrade(id){{
   var rEl=document.getElementById("m-r");
   rEl.textContent=t.r_multiple?(parseFloat(t.r_multiple)>=0?"+":"")+parseFloat(t.r_multiple).toFixed(2)+"R":"—";
   _clsEl(rEl,t.r_multiple);
+  // Trade Management (SIMPLE_DYNAMIC_EXIT_V1 trades only)
+  var mgSec=document.getElementById("m-mgmt-section");
+  var ver=t.exit_logic_version||"";
+  if(ver==="SIMPLE_DYNAMIC_EXIT_V1"){{
+    mgSec.style.display="";
+    var entry=parseFloat(t.entry_price)||0;
+    var initStop=parseFloat(t.initial_stop_loss)||0;
+    var actStop=parseFloat(t.active_stop_loss)||initStop;
+    var tp=parseFloat(t.take_profit)||0;
+    var cur=t.status==="closed"?(parseFloat(t.exit_price)||entry):(parseFloat(t.current_price)||entry);
+    var hh=parseFloat(t.highest_high_since_entry)||entry;
+    var hc=parseFloat(t.highest_close_since_entry)||entry;
+    document.getElementById("m-mg-entry").textContent=entry.toFixed(2)+" USD";
+    document.getElementById("m-mg-init-stop").textContent=initStop?initStop.toFixed(2)+" USD":"—";
+    document.getElementById("m-mg-active-stop").textContent=actStop?actStop.toFixed(2)+" USD":"—";
+    document.getElementById("m-mg-tp").textContent=tp?tp.toFixed(2)+" USD":"—";
+    document.getElementById("m-mg-dist-stop").textContent=(entry&&actStop)?(((entry-actStop)/entry*100).toFixed(2)+"%"):"—";
+    document.getElementById("m-mg-dist-tp").textContent=(entry&&tp)?(((tp-entry)/entry*100).toFixed(2)+"%"):"—";
+    document.getElementById("m-mg-hh").textContent=hh.toFixed(2)+" USD";
+    document.getElementById("m-mg-hc").textContent=hc.toFixed(2)+" USD";
+    document.getElementById("m-mg-maxprofit").textContent=((parseFloat(t.max_profit_pct)||0)*100).toFixed(2)+"%";
+    document.getElementById("m-mg-locked").textContent=((parseFloat(t.locked_profit_pct)||0)*100).toFixed(2)+"%";
+    document.getElementById("m-mg-status").textContent=(t.stop_status||"INITIAL").replace(/_/g," ");
+    document.getElementById("m-mg-version").textContent=ver;
+    document.getElementById("m-mg-sessions").textContent=t.holding_days?t.holding_days:"—";
+    // progress bar: map SL..TP to 0..100%
+    var lo=Math.min(actStop,initStop,entry),hi=Math.max(tp,cur,entry);
+    var span=(hi-lo)||1;
+    function pos(v){{return Math.max(0,Math.min(100,(v-lo)/span*100));}}
+    document.getElementById("m-mg-bar-stop").style.left=pos(actStop)+"%";
+    document.getElementById("m-mg-bar-cur").style.left=pos(cur)+"%";
+    document.getElementById("m-mg-bar-tp").style.left=pos(tp)+"%";
+    document.getElementById("m-mg-bar-tp").style.right="auto";
+    document.getElementById("m-mg-bar-fill").style.width=pos(cur)+"%";
+    // stop history
+    var hist=(typeof STOP_HISTORY!=="undefined")?(STOP_HISTORY[String(id)]||[]):[];
+    var hw=document.getElementById("m-mg-hist-wrap");
+    if(hist.length){{
+      hw.style.display="";
+      document.getElementById("m-mg-hist-count").textContent=hist.length;
+      var body=document.getElementById("m-mg-hist-body");
+      body.innerHTML=hist.map(function(h){{
+        return "<tr><td>"+h.session_date+"</td><td style='text-align:right'>"+parseFloat(h.previous_stop).toFixed(2)+
+          "</td><td style='text-align:right'>"+parseFloat(h.new_stop).toFixed(2)+
+          "</td><td>"+(h.stop_status||"").replace(/_/g," ")+"</td><td style='text-align:right'>"+
+          ((parseFloat(h.max_profit_pct)||0)*100).toFixed(1)+"%</td></tr>";
+      }}).join("");
+    }}else{{hw.style.display="none";}}
+  }}else{{mgSec.style.display="none";}}
   // reason
   var rSec=document.getElementById("m-reason-section");
   if(t.entry_reason){{
@@ -1791,6 +1933,11 @@ function showTrade(id){{
   }}else{{rSec.style.display="none";}}
   document.getElementById("trade-modal").classList.add("open");
   document.body.style.overflow="hidden";
+}}
+
+function toggleStopHist(){{
+  var el=document.getElementById("m-mg-hist");
+  el.style.display=el.style.display==="none"?"":"none";
 }}
 
 function closeModal(){{

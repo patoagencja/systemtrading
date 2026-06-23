@@ -131,6 +131,45 @@ def init_db():
             cur.execute("ALTER TABLE strategy_stats ADD COLUMN run_mode TEXT DEFAULT 'backtest'")
         except Exception:
             pass
+
+        # ── Exit logic v2 (SIMPLE_DYNAMIC_EXIT_V1) migrations ───────────────
+        _exit_v2_columns = [
+            "ALTER TABLE trades ADD COLUMN initial_stop_loss REAL",
+            "ALTER TABLE trades ADD COLUMN active_stop_loss REAL",
+            "ALTER TABLE trades ADD COLUMN highest_high_since_entry REAL DEFAULT 0",
+            "ALTER TABLE trades ADD COLUMN highest_close_since_entry REAL DEFAULT 0",
+            "ALTER TABLE trades ADD COLUMN max_profit_pct REAL DEFAULT 0",
+            "ALTER TABLE trades ADD COLUMN locked_profit_pct REAL DEFAULT 0",
+            "ALTER TABLE trades ADD COLUMN stop_status TEXT DEFAULT 'INITIAL'",
+            "ALTER TABLE trades ADD COLUMN exit_logic_version TEXT DEFAULT 'LEGACY_EXIT_LOGIC'",
+            "ALTER TABLE trades ADD COLUMN active_stop_effective_date TEXT",
+            "ALTER TABLE trades ADD COLUMN max_unrealized_pnl_pln REAL DEFAULT 0",
+            "ALTER TABLE trades ADD COLUMN max_unrealized_pnl_pct REAL DEFAULT 0",
+        ]
+        for stmt in _exit_v2_columns:
+            try:
+                cur.execute(stmt)
+            except Exception:
+                pass  # column already exists
+
+        cur.executescript("""
+        CREATE TABLE IF NOT EXISTS stop_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            trade_id INTEGER NOT NULL,
+            session_date TEXT NOT NULL,
+            effective_from_session TEXT NOT NULL,
+            previous_stop REAL NOT NULL,
+            new_stop REAL NOT NULL,
+            stop_status TEXT NOT NULL,
+            reason TEXT NOT NULL,
+            max_profit_pct REAL DEFAULT 0,
+            highest_close REAL DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (trade_id) REFERENCES trades(id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_stop_history_trade ON stop_history(trade_id);
+        """)
+
         # ── Intraday tables ──────────────────────────────────────────────────
         cur.executescript("""
         CREATE TABLE IF NOT EXISTS intraday_signals (
@@ -251,11 +290,16 @@ def reset_trading_data(run_mode: str = None):
     """Delete trades/signals/snapshots/stats. If run_mode given, only that mode."""
     with db_cursor() as cur:
         if run_mode:
+            cur.execute(
+                "DELETE FROM stop_history WHERE trade_id IN "
+                "(SELECT id FROM trades WHERE run_mode=?)", (run_mode,)
+            )
             cur.execute("DELETE FROM trades WHERE run_mode=?", (run_mode,))
             cur.execute("DELETE FROM signals WHERE run_mode=?", (run_mode,))
             cur.execute("DELETE FROM portfolio_snapshots WHERE run_mode=?", (run_mode,))
             cur.execute("DELETE FROM strategy_stats WHERE run_mode=?", (run_mode,))
         else:
+            cur.execute("DELETE FROM stop_history")
             cur.execute("DELETE FROM trades")
             cur.execute("DELETE FROM signals")
             cur.execute("DELETE FROM portfolio_snapshots")

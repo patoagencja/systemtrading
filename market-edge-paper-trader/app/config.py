@@ -17,9 +17,6 @@ MAX_OPEN_POSITIONS = int(os.getenv("MAX_OPEN_POSITIONS", 40))
 MAX_PORTFOLIO_EXPOSURE_PCT = float(os.getenv("MAX_PORTFOLIO_EXPOSURE_PCT", 0.80))
 MIN_SCORE_TO_OPEN = float(os.getenv("MIN_SCORE_TO_OPEN", 75))
 MAX_HOLDING_DAYS = int(os.getenv("MAX_HOLDING_DAYS", 10))
-# Hard cap on take-profit distance from entry (as % of entry price).
-# Prevents ATR-based TP from requiring >5% moves when ATR is wide.
-MAX_TP_PCT = float(os.getenv("MAX_TP_PCT", 0.05))   # 5% max TP from entry
 DATA_PERIOD = os.getenv("DATA_PERIOD", "2y")
 DATA_INTERVAL = os.getenv("DATA_INTERVAL", "1d")
 MIN_HISTORY_BARS = 220
@@ -49,3 +46,27 @@ SECTOR_ETFS = {
     "industrial": "XLI",
     "broad": "SPY",
 }
+
+# ── Exit logic v2 ────────────────────────────────────────────────────────────
+EXIT_LOGIC_VERSION = os.getenv("EXIT_LOGIC_VERSION", "SIMPLE_DYNAMIC_EXIT_V1")
+
+MAX_INITIAL_STOP_DISTANCE_PCT = float(os.getenv("MAX_INITIAL_STOP_DISTANCE_PCT", 0.07))
+DEFAULT_TAKE_PROFIT_PCT = float(os.getenv("DEFAULT_TAKE_PROFIT_PCT", 0.10))
+MAX_TAKE_PROFIT_PCT = float(os.getenv("MAX_TAKE_PROFIT_PCT", 0.12))
+
+BREAK_EVEN_TRIGGER_PCT = float(os.getenv("BREAK_EVEN_TRIGGER_PCT", 0.04))
+PROFIT_LOCK_TRIGGER_1_PCT = float(os.getenv("PROFIT_LOCK_TRIGGER_1_PCT", 0.06))
+PROFIT_LOCK_LEVEL_1_PCT = float(os.getenv("PROFIT_LOCK_LEVEL_1_PCT", 0.02))
+PROFIT_LOCK_TRIGGER_2_PCT = float(os.getenv("PROFIT_LOCK_TRIGGER_2_PCT", 0.08))
+PROFIT_LOCK_LEVEL_2_PCT = float(os.getenv("PROFIT_LOCK_LEVEL_2_PCT", 0.04))
+PROFIT_LOCK_TRIGGER_3_PCT = float(os.getenv("PROFIT_LOCK_TRIGGER_3_PCT", 0.10))
+PROFIT_LOCK_LEVEL_3_PCT = float(os.getenv("PROFIT_LOCK_LEVEL_3_PCT", 0.07))
+
+ENABLE_TRAILING_AFTER_10 = os.getenv("ENABLE_TRAILING_AFTER_10", "true").lower() == "true"
+TRAILING_STOP_DISTANCE_PCT = float(os.getenv("TRAILING_STOP_DISTANCE_PCT", 0.03))
+
+DEFAULT_MAX_HOLDING_SESSIONS = int(os.getenv("DEFAULT_MAX_HOLDING_SESSIONS", 10))
+MAX_WINNER_EXTENSION_SESSIONS = int(os.getenv("MAX_WINNER_EXTENSION_SESSIONS", 5))
+
+ENABLE_TECHNICAL_EXIT = os.getenv("ENABLE_TECHNICAL_EXIT", "false").lower() == "true"
+ENABLE_PARTIAL_EXITS = os.getenv("ENABLE_PARTIAL_EXITS", "false").lower() == "true"

@@ -1,0 +1,4 @@
+variant,total_trades,total_return_pct,cagr,profit_factor,win_rate,expectancy,avg_trade_pln,median_trade_pln,avg_win_pln,avg_loss_pln,win_loss_ratio,max_drawdown_pct,sharpe,sortino,calmar,avg_holding,median_holding,largest_winner,largest_loser,gap_below_stop_count,avg_gap_loss_pct,reached_4pct_count,reached_6pct_count,reached_8pct_count,reached_10pct_count,lost_after_8pct_count,gave_back_after_10pct_count,avg_profit_capture_ratio
+LEGACY_EXIT_LOGIC,0,0.0,0.0,0,0,0,0,0,0,0,0,0.0,0.0,-15.875,0.0,0,0,0,0,0,0,0,0,0,0,0,0,0
+FIXED_TP_DYNAMIC_STOP,0,0.0,0.0,0,0,0,0,0,0,0,0,0.0,0.0,-15.875,0.0,0,0,0,0,0,0,0,0,0,0,0,0,0
+TRAILING_AFTER_10,0,0.0,0.0,0,0,0,0,0,0,0,0,0.0,0.0,-15.875,0.0,0,0,0,0,0,0,0,0,0,0,0,0,0

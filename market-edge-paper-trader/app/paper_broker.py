@@ -37,17 +37,25 @@ class PaperBroker:
         self.run_mode = run_mode
 
     def open_trade(self, signal: Signal, shares: float, position_value_pln: float,
-                   risk_pln: float, trade_date: date, avg_volume: float = 0) -> int:
+                   risk_pln: float, trade_date: date, avg_volume: float = 0,
+                   exit_logic_version: str = "LEGACY_EXIT_LOGIC") -> int:
         eff_entry, cost_per_share = _apply_costs(signal.entry_price, "buy", shares, avg_volume)
         entry_cost_pln = cost_per_share * shares * self.rate
         actual_position_pln = eff_entry * shares * self.rate
+        # New fields for SIMPLE_DYNAMIC_EXIT_V1
+        initial_stop_loss = signal.stop_loss  # will be overridden if using new logic
+        active_stop_loss = signal.stop_loss
         with db_cursor() as cur:
             cur.execute("""
                 INSERT INTO trades
                 (ticker, strategy, status, entry_date, entry_price, stop_loss, take_profit,
                  shares, position_value_pln, risk_pln, score, entry_reason, max_holding_days,
-                 pnl_pln, pnl_pct, r_multiple, holding_days, run_mode)
-                VALUES (?, ?, 'open', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?)
+                 pnl_pln, pnl_pct, r_multiple, holding_days, run_mode,
+                 initial_stop_loss, active_stop_loss, exit_logic_version,
+                 highest_high_since_entry, highest_close_since_entry,
+                 stop_status, active_stop_effective_date)
+                VALUES (?, ?, 'open', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?,
+                        ?, ?, ?, ?, ?, 'INITIAL', ?)
             """, (
                 signal.ticker, signal.strategy, str(trade_date),
                 round(eff_entry, 4), round(signal.stop_loss, 4),
@@ -56,8 +64,91 @@ class PaperBroker:
                 round(signal.score, 1), signal.reason, signal.max_holding_days,
                 round(-entry_cost_pln, 2),  # initial pnl already negative (commission)
                 self.run_mode,
+                round(initial_stop_loss, 4), round(active_stop_loss, 4),
+                exit_logic_version, round(eff_entry, 4), round(eff_entry, 4),
+                str(trade_date),
             ))
             return cur.lastrowid
+
+    def open_trade_v2(self, signal: Signal, shares: float, position_value_pln: float,
+                      risk_pln: float, trade_date: date, avg_volume: float,
+                      actual_entry: float, initial_stop: float, take_profit_price: float,
+                      exit_logic_version: str) -> int:
+        """Open a trade with validated SIMPLE_DYNAMIC_EXIT_V1 parameters.
+
+        `actual_entry` is the realised T+1 open *before* slippage; costs are
+        applied here. `initial_stop` / `take_profit_price` come from
+        exit_logic.validate_signal_for_new_logic().
+        """
+        eff_entry, cost_per_share = _apply_costs(actual_entry, "buy", shares, avg_volume)
+        entry_cost_pln = cost_per_share * shares * self.rate
+        actual_position_pln = eff_entry * shares * self.rate
+        with db_cursor() as cur:
+            cur.execute("""
+                INSERT INTO trades
+                (ticker, strategy, status, entry_date, entry_price, stop_loss, take_profit,
+                 shares, position_value_pln, risk_pln, score, entry_reason, max_holding_days,
+                 pnl_pln, pnl_pct, r_multiple, holding_days, run_mode,
+                 initial_stop_loss, active_stop_loss, exit_logic_version,
+                 highest_high_since_entry, highest_close_since_entry,
+                 max_profit_pct, locked_profit_pct, stop_status,
+                 active_stop_effective_date, max_unrealized_pnl_pln, max_unrealized_pnl_pct)
+                VALUES (?, ?, 'open', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?,
+                        ?, ?, ?, ?, ?, 0, 0, 'INITIAL', ?, 0, 0)
+            """, (
+                signal.ticker, signal.strategy, str(trade_date),
+                round(eff_entry, 4), round(initial_stop, 4),
+                round(take_profit_price, 4), round(shares, 4),
+                round(actual_position_pln, 2), round(risk_pln, 2),
+                round(signal.score, 1), signal.reason, signal.max_holding_days,
+                round(-entry_cost_pln, 2),
+                self.run_mode,
+                round(initial_stop, 4), round(initial_stop, 4),
+                exit_logic_version, round(eff_entry, 4), round(eff_entry, 4),
+                str(trade_date),
+            ))
+            return cur.lastrowid
+
+    def update_trade_stop(self, trade_id: int, new_active_stop: float, stop_status: str,
+                          session_date, max_profit_pct: float, locked_profit_pct: float,
+                          highest_high: float, highest_close: float,
+                          max_unrealized_pnl_pct: float):
+        """Persist the current dynamic-stop / tracking state for an open trade."""
+        conn = get_connection()
+        try:
+            cur = conn.cursor()
+            cur.execute("""
+                UPDATE trades SET
+                  active_stop_loss=?, stop_loss=?, stop_status=?,
+                  active_stop_effective_date=?, max_profit_pct=?, locked_profit_pct=?,
+                  highest_high_since_entry=?, highest_close_since_entry=?,
+                  max_unrealized_pnl_pct=?
+                WHERE id=?
+            """, (
+                round(new_active_stop, 4), round(new_active_stop, 4), stop_status,
+                str(session_date), round(max_profit_pct, 6), round(locked_profit_pct, 6),
+                round(highest_high, 4), round(highest_close, 4),
+                round(max_unrealized_pnl_pct, 6), trade_id,
+            ))
+            conn.commit()
+        finally:
+            conn.close()
+
+    def save_stop_history(self, trade_id: int, session_date, prev_stop: float,
+                          new_stop: float, stop_status: str, reason: str,
+                          max_profit_pct: float, highest_close: float):
+        """Insert a row recording a stop change (effective next session)."""
+        with db_cursor() as cur:
+            cur.execute("""
+                INSERT INTO stop_history
+                (trade_id, session_date, effective_from_session, previous_stop, new_stop,
+                 stop_status, reason, max_profit_pct, highest_close)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                trade_id, str(session_date), str(session_date),
+                round(prev_stop, 4), round(new_stop, 4), stop_status, reason,
+                round(max_profit_pct, 6), round(highest_close, 4),
+            ))
 
     def save_signal(self, signal: Signal, signal_date: date, acted: bool = False):
         with db_cursor() as cur:
