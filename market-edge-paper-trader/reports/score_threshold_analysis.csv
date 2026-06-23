@@ -1,0 +1,12 @@
+score_bucket,count,win_rate_pct,avg_pnl_pln,profit_factor,total_pnl_pln,type,qualifying_trades,return_pct
+60-64,0.0,0.0,0.0,0.0,0.0,bucket,,
+65-69,0.0,0.0,0.0,0.0,0.0,bucket,,
+70-74,0.0,0.0,0.0,0.0,0.0,bucket,,
+75-79,1021.0,51.7,113.0,1.17,115289.0,bucket,,
+80-84,1004.0,55.0,191.0,1.28,191492.0,bucket,,
+85+,991.0,52.5,87.0,1.12,86241.0,bucket,,
+65,,53.1,,,393021.0,threshold_sim,3016.0,39.3
+70,,53.1,,,393021.0,threshold_sim,3016.0,39.3
+75,,53.1,,,393021.0,threshold_sim,3016.0,39.3
+80,,53.7,,,277732.0,threshold_sim,1995.0,27.77
+85,,52.5,,,86241.0,threshold_sim,991.0,8.62

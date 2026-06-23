@@ -135,12 +135,22 @@ def gather(mode: str) -> dict:
 # ── benchmark (SPY buy-and-hold aligned to snapshot dates) ──────────────────
 
 def fetch_spy_benchmark(snap_dates: list[str], initial: float) -> list[dict]:
-    """Return [{date, value}] aligned to snap_dates. Returns [] on failure."""
+    """Return [{date, value}] aligned to snap_dates. Returns [] on failure.
+
+    FIX (2026-06): Previously used fetch_ohlcv("SPY", period="2y") which only
+    fetched the last 2 years of SPY data. Since the backtest starts 2020-01-01,
+    the benchmark was missing ~4 years of data and appeared to start only from
+    ~2024 on the equity chart. Now uses fetch_ohlcv_range with the actual
+    backtest start date so the benchmark spans the full backtest period.
+    """
     if not snap_dates:
         return []
     try:
-        from app.data_provider import fetch_ohlcv
-        spy = fetch_ohlcv("SPY", period="2y")
+        from app.data_provider import fetch_ohlcv_range
+        # Use the earliest snapshot date as start so SPY aligns with portfolio start
+        start_date = snap_dates[0]
+        end_date = snap_dates[-1]
+        spy = fetch_ohlcv_range("SPY", start=start_date, end=end_date)
         if spy.empty:
             return []
         spy_dates_set = {str(d.date()) for d in spy.index}
@@ -154,6 +164,8 @@ def fetch_spy_benchmark(snap_dates: list[str], initial: float) -> list[dict]:
                     if first_price is None:
                         first_price = price
                     result.append({"date": sd, "value": initial * price / first_price})
+        if result:
+            print(f"  Benchmark SPY: {len(result)} points from {result[0]['date']} to {result[-1]['date']}")
         return result
     except Exception as e:
         print(f"  [warn] benchmark fetch failed: {e}")

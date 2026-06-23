@@ -1,0 +1,5 @@
+strategy,total_pnl_pln,n_trades,win_rate_pct,profit_factor,expectancy_pln,avg_winner_pln,avg_loser_pln,max_drawdown_pln,pct_of_total_pnl,avg_position_size_pln
+ETF_RELATIVE_STRENGTH,288025.0,1551,54.4,1.27,186.0,1629.0,-1537.0,-107010.0,73.3,35563.0
+MEAN_REVERSION_UPTREND,41541.0,121,54.5,1.5,343.0,1876.0,-1496.0,-26591.0,10.6,34450.0
+MOMENTUM_BREAKOUT,39968.0,91,58.2,1.93,439.0,1563.0,-1129.0,-8045.0,10.2,35492.0
+PULLBACK_TREND,23488.0,1253,50.8,1.03,19.0,1413.0,-1423.0,-69789.0,6.0,35578.0

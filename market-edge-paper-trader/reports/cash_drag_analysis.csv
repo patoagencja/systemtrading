@@ -1,0 +1,15 @@
+metric,value
+initial_capital_pln,1000000.0
+final_value_pln,1339665.07
+total_pnl_pln,393020.7
+actual_total_return_pct,33.97
+mean_exposure_pct,34.78
+time_in_market_pct,96.21
+hypothetical_fully_invested_return_pct,113.0
+cash_drag_estimate_pp,79.03
+avg_invested_capital_pln,413242.0
+return_on_deployed_capital_pct,95.11
+avg_trades_per_year,467.4
+avg_trades_per_month,38.9
+total_backtest_years,6.47
+cagr_pct,4.62
