@@ -14,6 +14,15 @@ on:
         description: "Clear existing backtest data before running?"
         type: boolean
         default: true
+      compare_all:
+        description: "Run 4-way exit logic comparison (LEGACY, FIXED_TP, TRAILING_AFTER_10, TRAILING_ONLY)?"
+        type: boolean
+        default: false
+      cost_scenario:
+        description: "Cost scenario"
+        type: choice
+        options: [BASE, LOW, STRESS]
+        default: BASE
 
 permissions:
   contents: write
@@ -51,7 +60,15 @@ jobs:
         run: python scripts/reset_portfolio.py --force --mode backtest
 
       - name: Run backtest
-        run: python scripts/run_backtest.py --start "${{ github.event.inputs.start_date }}"
+        run: |
+          COMPARE_FLAG=""
+          if [ "${{ github.event.inputs.compare_all }}" = "true" ]; then
+            COMPARE_FLAG="--compare-all"
+          fi
+          python scripts/run_backtest.py \
+            --start "${{ github.event.inputs.start_date }}" \
+            --cost-scenario "${{ github.event.inputs.cost_scenario }}" \
+            $COMPARE_FLAG
 
       - name: Build dashboard
         env:
