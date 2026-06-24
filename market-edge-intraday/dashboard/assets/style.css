@@ -1,0 +1,104 @@
+/* market-edge-intraday — professional dark theme for the Streamlit dashboard. */
+
+:root {
+    --bg: #0e1117;
+    --panel: #161b22;
+    --panel-2: #1c2430;
+    --border: #21262d;
+    --text: #c9d1d9;
+    --muted: #8b949e;
+    --accent: #2f81f7;
+    --green: #3fb950;
+    --red: #f85149;
+    --amber: #d29922;
+}
+
+/* App background */
+.stApp {
+    background-color: var(--bg);
+    color: var(--text);
+}
+
+/* Sidebar */
+section[data-testid="stSidebar"] {
+    background-color: var(--panel);
+    border-right: 1px solid var(--border);
+}
+
+/* Headings */
+h1, h2, h3, h4 {
+    color: #f0f6fc;
+    letter-spacing: 0.2px;
+}
+
+/* Paper-trading banner */
+.paper-banner {
+    background: linear-gradient(90deg, #1f6feb22, #d2992222);
+    border: 1px solid var(--amber);
+    color: #f0f6fc;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 14px;
+}
+
+/* Metric cards */
+div[data-testid="stMetric"] {
+    background-color: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+}
+div[data-testid="stMetricValue"] {
+    color: #f0f6fc;
+    font-weight: 700;
+}
+div[data-testid="stMetricLabel"] {
+    color: var(--muted);
+}
+
+/* Status badges */
+.badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border: 1px solid transparent;
+}
+.badge-ok    { background: #3fb95022; color: var(--green); border-color: var(--green); }
+.badge-warn  { background: #d2992222; color: var(--amber); border-color: var(--amber); }
+.badge-error { background: #f8514922; color: var(--red);   border-color: var(--red); }
+.badge-idle  { background: #8b949e22; color: var(--muted); border-color: var(--muted); }
+
+/* Mode pill */
+.mode-pill {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 14px;
+    font-weight: 700;
+    background: var(--accent);
+    color: white;
+}
+
+/* Dataframes */
+div[data-testid="stDataFrame"] {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+/* Tabs */
+button[data-baseweb="tab"] {
+    color: var(--muted);
+}
+button[data-baseweb="tab"][aria-selected="true"] {
+    color: #f0f6fc;
+    border-bottom-color: var(--accent);
+}
+
+/* Tighten default block padding */
+.block-container {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}

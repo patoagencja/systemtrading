@@ -1,0 +1,42 @@
+# market-edge-intraday — lint, type-check and test on every change to the project.
+# Named "mei-*" to avoid colliding with the sibling project's existing workflows.
+name: Intraday Tests (market-edge-intraday)
+
+on:
+  push:
+    paths:
+      - "market-edge-intraday/**"
+  pull_request:
+    paths:
+      - "market-edge-intraday/**"
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: market-edge-intraday
+    env:
+      # Tests use a throwaway SQLite file so no Postgres is needed in CI.
+      INTRADAY_TEST_DB_URL: "sqlite:///./test.db"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: market-edge-intraday/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Ruff (lint)
+        run: ruff check .
+
+      - name: Mypy (type check, non-blocking)
+        run: mypy app || echo "::notice::mypy reported issues (non-blocking)"
+
+      - name: Pytest with coverage
+        run: pytest -v --cov=app --cov-report=term-missing
